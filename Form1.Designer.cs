@@ -40,8 +40,13 @@
             trendingPosts = new Button();
             panel2 = new Panel();
             newPosts = new Button();
+            pnLogin = new Panel();
+            login = new Button();
             menuTransition = new System.Windows.Forms.Timer(components);
             sidebarTransition = new System.Windows.Forms.Timer(components);
+            panelMain = new Panel();
+            panel5 = new Panel();
+            register = new Button();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             sidebar.SuspendLayout();
@@ -49,11 +54,13 @@
             panel4.SuspendLayout();
             panel3.SuspendLayout();
             panel2.SuspendLayout();
+            pnLogin.SuspendLayout();
+            panel5.SuspendLayout();
             SuspendLayout();
             // 
             // panel1
             // 
-            panel1.BackColor = SystemColors.ActiveCaptionText;
+            panel1.BackColor = Color.FromArgb(23, 24, 29);
             panel1.Controls.Add(pictureBox1);
             panel1.Dock = DockStyle.Top;
             panel1.ForeColor = Color.White;
@@ -77,11 +84,12 @@
             // 
             sidebar.BackColor = Color.FromArgb(23, 24, 29);
             sidebar.Controls.Add(postContainer);
+            sidebar.Controls.Add(pnLogin);
+            sidebar.Controls.Add(panel5);
             sidebar.Location = new Point(0, 60);
             sidebar.Name = "sidebar";
             sidebar.Size = new Size(223, 747);
             sidebar.TabIndex = 1;
-            sidebar.WrapContents = false;
             // 
             // postContainer
             // 
@@ -162,6 +170,30 @@
             newPosts.Text = "New";
             newPosts.UseVisualStyleBackColor = false;
             // 
+            // pnLogin
+            // 
+            pnLogin.Anchor = AnchorStyles.None;
+            pnLogin.Controls.Add(login);
+            pnLogin.Location = new Point(3, 57);
+            pnLogin.Name = "pnLogin";
+            pnLogin.Size = new Size(229, 48);
+            pnLogin.TabIndex = 6;
+            // 
+            // login
+            // 
+            login.BackColor = Color.FromArgb(23, 24, 29);
+            login.ForeColor = SystemColors.ControlLightLight;
+            login.Image = (Image)resources.GetObject("login.Image");
+            login.ImageAlign = ContentAlignment.MiddleLeft;
+            login.Location = new Point(-21, -10);
+            login.Name = "login";
+            login.Padding = new Padding(25, 0, 0, 0);
+            login.Size = new Size(255, 69);
+            login.TabIndex = 2;
+            login.Text = "Login";
+            login.UseVisualStyleBackColor = false;
+            login.Click += login_Click;
+            // 
             // menuTransition
             // 
             menuTransition.Interval = 10;
@@ -172,11 +204,43 @@
             sidebarTransition.Interval = 10;
             sidebarTransition.Tick += sidebarTransition_Tick;
             // 
+            // panelMain
+            // 
+            panelMain.Location = new Point(221, 60);
+            panelMain.Name = "panelMain";
+            panelMain.Size = new Size(1135, 747);
+            panelMain.TabIndex = 3;
+            // 
+            // panel5
+            // 
+            panel5.Anchor = AnchorStyles.None;
+            panel5.Controls.Add(register);
+            panel5.Location = new Point(3, 111);
+            panel5.Name = "panel5";
+            panel5.Size = new Size(229, 48);
+            panel5.TabIndex = 7;
+            // 
+            // register
+            // 
+            register.BackColor = Color.FromArgb(23, 24, 29);
+            register.ForeColor = SystemColors.ControlLightLight;
+            register.Image = (Image)resources.GetObject("register.Image");
+            register.ImageAlign = ContentAlignment.MiddleLeft;
+            register.Location = new Point(-21, -6);
+            register.Name = "register";
+            register.Padding = new Padding(25, 0, 0, 0);
+            register.Size = new Size(255, 68);
+            register.TabIndex = 2;
+            register.Text = "Reigster";
+            register.UseVisualStyleBackColor = false;
+            register.Click += register_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1356, 807);
+            Controls.Add(panelMain);
             Controls.Add(sidebar);
             Controls.Add(panel1);
             IsMdiContainer = true;
@@ -189,6 +253,8 @@
             panel4.ResumeLayout(false);
             panel3.ResumeLayout(false);
             panel2.ResumeLayout(false);
+            pnLogin.ResumeLayout(false);
+            panel5.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -206,5 +272,10 @@
         private Button posts;
         private FlowLayoutPanel postContainer;
         private System.Windows.Forms.Timer sidebarTransition;
+        private Panel pnLogin;
+        private Button login;
+        private Panel panelMain;
+        private Panel panel5;
+        private Button register;
     }
 }

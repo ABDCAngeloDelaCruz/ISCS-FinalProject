@@ -6,6 +6,13 @@ namespace FinalProject
         {
             InitializeComponent();
         }
+        private void LoadView(UserControl view)
+        {
+            panelMain.Controls.Clear();
+            view.Dock = DockStyle.Fill;
+            panelMain.Controls.Add(view);
+        }
+
         bool menuExpand = false;
         private void menuTransition_Tick(object sender, EventArgs e)
         {
@@ -60,6 +67,16 @@ namespace FinalProject
         private void pictureBox1_Click(object sender, EventArgs e)
         {
             sidebarTransition.Start();
+        }
+
+        private void login_Click(object sender, EventArgs e)
+        {
+            LoadView(new Login());
+        }
+
+        private void register_Click(object sender, EventArgs e)
+        {
+            LoadView(new Register());
         }
     }
 }
