@@ -39,31 +39,32 @@
             //
             // postContainer
             //
-            postContainer.AutoScroll = true;
-            postContainer.Controls.Add(postCard);
+            postContainer.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             postContainer.Dock = DockStyle.Fill;
+            postContainer.AutoScroll = true;
+            postContainer.BackColor = Color.WhiteSmoke;
+            postContainer.Controls.Add(postCard);
             postContainer.FlowDirection = FlowDirection.TopDown;
             postContainer.Location = new Point(0, 0);
             postContainer.Name = "postContainer";
-            postContainer.Size = new Size(500, 496);
+            postContainer.Padding = new Padding(20, 20, 20, 100); // Extra padding at bottom
+            postContainer.Size = new Size(900, 600);
             postContainer.TabIndex = 0;
             postContainer.WrapContents = false;
-            postContainer.BackColor = System.Drawing.Color.WhiteSmoke;
-            postContainer.Padding = new Padding(10);
             //
             // postCard
             //
+            postCard.BackColor = Color.White;
+            postCard.BorderStyle = BorderStyle.FixedSingle;
             postCard.Controls.Add(postMeta);
             postCard.Controls.Add(postConts);
             postCard.Controls.Add(postTitle);
-            postCard.Location = new Point(5, 5);
+            postCard.Location = new Point(25, 25);
             postCard.Margin = new Padding(5);
             postCard.Name = "postCard";
-            postCard.Size = new Size(494, 150);
-            postCard.TabIndex = 1;
-            postCard.BackColor = System.Drawing.Color.White;
-            postCard.BorderStyle = BorderStyle.FixedSingle;
             postCard.Padding = new Padding(10);
+            postCard.Size = new Size(800, 150);
+            postCard.TabIndex = 1;
             postCard.Visible = false;
             //
             // postMeta
@@ -71,7 +72,7 @@
             postMeta.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
             postMeta.Location = new Point(3, 123);
             postMeta.Name = "postMeta";
-            postMeta.Size = new Size(487, 18);
+            postMeta.Size = new Size(297, 18);
             postMeta.TabIndex = 2;
             postMeta.Text = "Meta";
             postMeta.TextAlign = ContentAlignment.TopRight;
@@ -79,10 +80,10 @@
             // postConts
             //
             postConts.Location = new Point(3, 25);
-            postConts.MaximumSize = new Size(488, 85);
-            postConts.MinimumSize = new Size(480, 20);
+            postConts.MaximumSize = new Size(780, 85);
+            postConts.MinimumSize = new Size(780, 20);
             postConts.Name = "postConts";
-            postConts.Size = new Size(488, 85);
+            postConts.Size = new Size(780, 85);
             postConts.TabIndex = 1;
             postConts.Text = "label1";
             //
@@ -90,9 +91,9 @@
             //
             postTitle.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             postTitle.Location = new Point(0, 0);
-            postTitle.MaximumSize = new Size(491, 25);
+            postTitle.MaximumSize = new Size(780, 25);
             postTitle.Name = "postTitle";
-            postTitle.Size = new Size(491, 25);
+            postTitle.Size = new Size(780, 25);
             postTitle.TabIndex = 0;
             postTitle.Text = "Title";
             //
@@ -102,7 +103,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(postContainer);
             Name = "newPosts";
-            Size = new Size(500, 496);
+            Size = new Size(900, 600);
             postContainer.ResumeLayout(false);
             postCard.ResumeLayout(false);
             ResumeLayout(false);

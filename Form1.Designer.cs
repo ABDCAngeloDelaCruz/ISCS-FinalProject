@@ -36,16 +36,18 @@
             postContainer = new FlowLayoutPanel();
             panel4 = new Panel();
             posts = new Button();
+            panel2 = new Panel();
+            newPosts = new Button();
+            panel3 = new Panel();
+            trendingPosts = new Button();
             panel6 = new Panel();
             addPost = new Button();
             pnLogin = new Panel();
             login = new Button();
             panel5 = new Panel();
             register = new Button();
-            panel2 = new Panel();
-            newPosts = new Button();
-            panel3 = new Panel();
-            trendingPosts = new Button();
+            pnLogout = new Panel();
+            logout = new Button();
             menuTransition = new System.Windows.Forms.Timer(components);
             sidebarTransition = new System.Windows.Forms.Timer(components);
             panelMain = new Panel();
@@ -54,11 +56,12 @@
             sidebar.SuspendLayout();
             postContainer.SuspendLayout();
             panel4.SuspendLayout();
+            panel2.SuspendLayout();
+            panel3.SuspendLayout();
             panel6.SuspendLayout();
             pnLogin.SuspendLayout();
             panel5.SuspendLayout();
-            panel2.SuspendLayout();
-            panel3.SuspendLayout();
+            pnLogout.SuspendLayout();
             SuspendLayout();
             // 
             // panel1
@@ -90,9 +93,11 @@
             sidebar.Controls.Add(panel6);
             sidebar.Controls.Add(pnLogin);
             sidebar.Controls.Add(panel5);
-            sidebar.Location = new Point(0, 60);
+            sidebar.Controls.Add(pnLogout);
+            sidebar.Dock = DockStyle.Left;
+            sidebar.Location = new Point(0, 62);
             sidebar.Name = "sidebar";
-            sidebar.Size = new Size(223, 747);
+            sidebar.Size = new Size(223, 745);
             sidebar.TabIndex = 1;
             // 
             // postContainer
@@ -129,6 +134,52 @@
             posts.Text = "Posts";
             posts.UseVisualStyleBackColor = false;
             posts.Click += posts_Click;
+            // 
+            // panel2
+            // 
+            panel2.Controls.Add(newPosts);
+            panel2.Location = new Point(3, 57);
+            panel2.Name = "panel2";
+            panel2.Size = new Size(223, 48);
+            panel2.TabIndex = 3;
+            // 
+            // newPosts
+            // 
+            newPosts.BackColor = Color.FromArgb(32, 33, 36);
+            newPosts.ForeColor = SystemColors.ControlLightLight;
+            newPosts.Image = (Image)resources.GetObject("newPosts.Image");
+            newPosts.ImageAlign = ContentAlignment.MiddleLeft;
+            newPosts.Location = new Point(-23, -9);
+            newPosts.Name = "newPosts";
+            newPosts.Padding = new Padding(25, 0, 0, 0);
+            newPosts.Size = new Size(276, 68);
+            newPosts.TabIndex = 2;
+            newPosts.Text = "New";
+            newPosts.UseVisualStyleBackColor = false;
+            newPosts.Click += newPosts_Click;
+            // 
+            // panel3
+            // 
+            panel3.Controls.Add(trendingPosts);
+            panel3.Location = new Point(3, 111);
+            panel3.Name = "panel3";
+            panel3.Size = new Size(223, 48);
+            panel3.TabIndex = 4;
+            // 
+            // trendingPosts
+            // 
+            trendingPosts.BackColor = Color.FromArgb(32, 33, 36);
+            trendingPosts.ForeColor = SystemColors.ControlLightLight;
+            trendingPosts.Image = (Image)resources.GetObject("trendingPosts.Image");
+            trendingPosts.ImageAlign = ContentAlignment.MiddleLeft;
+            trendingPosts.Location = new Point(-23, -9);
+            trendingPosts.Name = "trendingPosts";
+            trendingPosts.Padding = new Padding(25, 0, 0, 0);
+            trendingPosts.Size = new Size(276, 76);
+            trendingPosts.TabIndex = 2;
+            trendingPosts.Text = "Trending";
+            trendingPosts.UseVisualStyleBackColor = false;
+            trendingPosts.Click += trendingPosts_Click;
             // 
             // panel6
             // 
@@ -202,51 +253,30 @@
             register.UseVisualStyleBackColor = false;
             register.Click += register_Click;
             // 
-            // panel2
+            // pnLogout
             // 
-            panel2.Controls.Add(newPosts);
-            panel2.Location = new Point(3, 57);
-            panel2.Name = "panel2";
-            panel2.Size = new Size(223, 48);
-            panel2.TabIndex = 3;
+            pnLogout.Anchor = AnchorStyles.None;
+            pnLogout.Controls.Add(logout);
+            pnLogout.Location = new Point(3, 219);
+            pnLogout.Name = "pnLogout";
+            pnLogout.Size = new Size(229, 48);
+            pnLogout.TabIndex = 9;
+            pnLogout.Visible = false;
             // 
-            // newPosts
+            // logout
             // 
-            newPosts.BackColor = Color.FromArgb(32, 33, 36);
-            newPosts.ForeColor = SystemColors.ControlLightLight;
-            newPosts.Image = (Image)resources.GetObject("newPosts.Image");
-            newPosts.ImageAlign = ContentAlignment.MiddleLeft;
-            newPosts.Location = new Point(-23, -9);
-            newPosts.Name = "newPosts";
-            newPosts.Padding = new Padding(25, 0, 0, 0);
-            newPosts.Size = new Size(276, 68);
-            newPosts.TabIndex = 2;
-            newPosts.Text = "New";
-            newPosts.UseVisualStyleBackColor = false;
-            newPosts.Click += newPosts_Click;
-            // 
-            // panel3
-            // 
-            panel3.Controls.Add(trendingPosts);
-            panel3.Location = new Point(3, 111);
-            panel3.Name = "panel3";
-            panel3.Size = new Size(223, 48);
-            panel3.TabIndex = 4;
-            // 
-            // trendingPosts
-            // 
-            trendingPosts.BackColor = Color.FromArgb(32, 33, 36);
-            trendingPosts.ForeColor = SystemColors.ControlLightLight;
-            trendingPosts.Image = (Image)resources.GetObject("trendingPosts.Image");
-            trendingPosts.ImageAlign = ContentAlignment.MiddleLeft;
-            trendingPosts.Location = new Point(-23, -9);
-            trendingPosts.Name = "trendingPosts";
-            trendingPosts.Padding = new Padding(25, 0, 0, 0);
-            trendingPosts.Size = new Size(276, 76);
-            trendingPosts.TabIndex = 2;
-            trendingPosts.Text = "Trending";
-            trendingPosts.UseVisualStyleBackColor = false;
-            trendingPosts.Click += trendingPosts_Click;
+            logout.BackColor = Color.FromArgb(23, 24, 29);
+            logout.ForeColor = SystemColors.ControlLightLight;
+            logout.Image = (Image)resources.GetObject("logout.Image");
+            logout.ImageAlign = ContentAlignment.MiddleLeft;
+            logout.Location = new Point(-21, -6);
+            logout.Name = "logout";
+            logout.Padding = new Padding(25, 0, 0, 0);
+            logout.Size = new Size(255, 68);
+            logout.TabIndex = 2;
+            logout.Text = "Logout";
+            logout.UseVisualStyleBackColor = false;
+            logout.Click += logout_Click;
             // 
             // menuTransition
             // 
@@ -260,7 +290,9 @@
             // 
             // panelMain
             // 
-            panelMain.Location = new Point(221, 60);
+            panelMain.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            panelMain.BackColor = Color.White;
+            panelMain.Location = new Point(223, 62);
             panelMain.Name = "panelMain";
             panelMain.Size = new Size(1135, 747);
             panelMain.TabIndex = 3;
@@ -274,6 +306,7 @@
             Controls.Add(sidebar);
             Controls.Add(panel1);
             IsMdiContainer = true;
+            MinimumSize = new Size(800, 600);
             Name = "Form1";
             Text = "Form1";
             panel1.ResumeLayout(false);
@@ -281,11 +314,12 @@
             sidebar.ResumeLayout(false);
             postContainer.ResumeLayout(false);
             panel4.ResumeLayout(false);
+            panel2.ResumeLayout(false);
+            panel3.ResumeLayout(false);
             panel6.ResumeLayout(false);
             pnLogin.ResumeLayout(false);
             panel5.ResumeLayout(false);
-            panel2.ResumeLayout(false);
-            panel3.ResumeLayout(false);
+            pnLogout.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -310,5 +344,7 @@
         private Button register;
         private Panel panel6;
         private Button addPost;
+        private Panel pnLogout;
+        private Button logout;
     }
 }

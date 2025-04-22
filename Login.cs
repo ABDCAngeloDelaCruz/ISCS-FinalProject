@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
+using System.IO;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 
@@ -14,45 +8,44 @@ namespace FinalProject
 {
     public partial class Login : UserControl
     {
-        XmlDocument doc;
-        XmlElement root;
-        static string relativePath = @"XMLFiles\data.xml";
-        string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+        private XmlDocument? doc;
+        private XmlElement? root;
+        private static readonly string relativePath = @"XMLFiles\data.xml";
+        private readonly string path = Path.Combine(Environment.CurrentDirectory, relativePath);
 
         public Login()
         {
             InitializeComponent();
-            Login_Load(this, EventArgs.Empty);
+            LoadXmlData();
         }
 
-        public void Login_Load(object sender, EventArgs e)
+        private void LoadXmlData()
         {
-            doc = new XmlDocument();
-            doc.Load(path);
-            root = doc.DocumentElement;
-            if (root != null)
+            try
             {
-                XmlNodeList users = root.SelectNodes("user");
-                foreach (XmlNode user in users)
+                doc = new XmlDocument();
+                doc.Load(path);
+                root = doc.DocumentElement;
+
+                if (root == null)
                 {
-                    string username = user["username"].InnerText;
-                    string password = user["password"].InnerText;
+                    MessageBox.Show("No data found in XML file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("No data found.");
+                MessageBox.Show($"Error loading XML data: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void submit_Click(object sender, EventArgs e)
+        private void Submit_Click(object sender, EventArgs e)
         {
             string enteredUsername = username.Text;
             string enteredPassword = password.Text;
 
             if (string.IsNullOrEmpty(enteredUsername) || string.IsNullOrEmpty(enteredPassword))
             {
-                MessageBox.Show("Please fill in both the username and password.");
+                MessageBox.Show("Please fill in both the username and password.", "Input Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -61,23 +54,32 @@ namespace FinalProject
             if (isLoginSuccessful)
             {
                 Session.LoggedInUsername = enteredUsername;
-                MessageBox.Show("Login successful!");
+                MessageBox.Show("Login successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                // Navigate to the posts view
+                var form = FindForm() as Form1;
+                form?.LoadView(new newPosts());
             }
             else
             {
-                MessageBox.Show("Invalid username or password.");
+                MessageBox.Show("Invalid username or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private bool VerifyLogin(string enteredUsername, string enteredPassword)
         {
-            XmlNode userNode = root.SelectSingleNode($"users/user[username='{enteredUsername}']");
+            if (root == null) return false;
+
+            XmlNode? userNode = root.SelectSingleNode($"/data/users/user[username='{enteredUsername}']");
 
             if (userNode != null)
             {
-                string storedHashedPassword = userNode["password"].InnerText;
-
-                return LoginPasswordHelper.VerifyPassword(enteredPassword, storedHashedPassword);
+                var passwordNode = userNode["password"];
+                if (passwordNode != null)
+                {
+                    string storedHashedPassword = passwordNode.InnerText;
+                    return LoginPasswordHelper.VerifyPassword(enteredPassword, storedHashedPassword);
+                }
             }
 
             return false;
@@ -88,45 +90,53 @@ namespace FinalProject
     {
         public static string HashPassword(string password)
         {
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                byte[] salt = new byte[16];
-                rng.GetBytes(salt);
+            byte[] salt = new byte[16];
+            RandomNumberGenerator.Fill(salt);
 
-                using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000))
-                {
-                    byte[] hash = pbkdf2.GetBytes(20);
+            byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                salt,
+                10000,
+                HashAlgorithmName.SHA256,
+                20);
 
-                    byte[] hashBytes = new byte[36];
-                    Array.Copy(salt, 0, hashBytes, 0, 16);
-                    Array.Copy(hash, 0, hashBytes, 16, 20);
+            byte[] hashBytes = new byte[36];
+            Array.Copy(salt, 0, hashBytes, 0, 16);
+            Array.Copy(hash, 0, hashBytes, 16, 20);
 
-                    return Convert.ToBase64String(hashBytes);
-                }
-            }
+            return Convert.ToBase64String(hashBytes);
         }
 
         public static bool VerifyPassword(string enteredPassword, string storedHash)
         {
-            byte[] hashBytes = Convert.FromBase64String(storedHash);
-
-            byte[] salt = new byte[16];
-            Array.Copy(hashBytes, 0, salt, 0, 16);
-
-            using (var pbkdf2 = new Rfc2898DeriveBytes(enteredPassword, salt, 10000))
+            try
             {
-                byte[] hash = pbkdf2.GetBytes(20); 
+                byte[] hashBytes = Convert.FromBase64String(storedHash);
+
+                byte[] salt = new byte[16];
+                Array.Copy(hashBytes, 0, salt, 0, 16);
+
+                byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
+                    enteredPassword,
+                    salt,
+                    10000,
+                    HashAlgorithmName.SHA256,
+                    20);
 
                 for (int i = 0; i < 20; i++)
                 {
-                    if (hashBytes[i + 16] != hash[i]) 
+                    if (hashBytes[i + 16] != hash[i])
                     {
-                        return false; 
+                        return false;
                     }
                 }
-            }
 
-            return true; 
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

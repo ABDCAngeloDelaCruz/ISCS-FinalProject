@@ -25,7 +25,13 @@ namespace FinalProject
         {
             InitializeComponent();
             this.postId = postId;
+            this.Resize += PostDetail_Resize;
             LoadPostDetails();
+        }
+
+        private void PostDetail_Resize(object sender, EventArgs e)
+        {
+            AdjustControlPositions();
         }
 
         private void LoadPostDetails()
@@ -66,9 +72,13 @@ namespace FinalProject
         private void AdjustControlPositions()
         {
             // Calculate the height of the content text
+            int contentWidth = Math.Min(900, this.Width - 100);
             int contentHeight = TextRenderer.MeasureText(lblContent.Text, lblContent.Font,
-                                new Size(lblContent.MaximumSize.Width, 0),
+                                new Size(contentWidth, 0),
                                 TextFormatFlags.WordBreak).Height;
+
+            // Update the maximum width of the content label to match the panel width
+            lblContent.MaximumSize = new Size(contentWidth, 0);
 
             // Adjust the position of author and timestamp labels
             lblAuthor.Location = new Point(lblAuthor.Location.X, lblContent.Location.Y + contentHeight + 20);
@@ -78,9 +88,23 @@ namespace FinalProject
             lblComments.Location = new Point(lblComments.Location.X, lblTimestamp.Location.Y + lblTimestamp.Height + 20);
             commentsPanel.Location = new Point(commentsPanel.Location.X, lblComments.Location.Y + lblComments.Height + 10);
 
-            // Adjust the position of comment input
-            txtComment.Location = new Point(txtComment.Location.X, commentsPanel.Location.Y + commentsPanel.Height + 20);
-            btnAddComment.Location = new Point(btnAddComment.Location.X, txtComment.Location.Y);
+            // Set the width of the comments panel
+            commentsPanel.Width = Math.Min(900, this.Width - 60);
+
+            // Set a fixed height for the comments panel to prevent it from expanding too much
+            commentsPanel.Height = 200;
+            commentsPanel.MinimumSize = new Size(800, 200);
+            commentsPanel.MaximumSize = new Size(1200, 200);
+
+            // Adjust the position of comment input - fixed position at the bottom
+            int commentY = commentsPanel.Location.Y + commentsPanel.Height + 20;
+            txtComment.Location = new Point(txtComment.Location.X, commentY);
+            btnAddComment.Location = new Point(Math.Min(830, this.Width - btnAddComment.Width - 30), commentY);
+            txtComment.Width = Math.Min(800, this.Width - btnAddComment.Width - 60);
+
+            // Make sure the comment controls are always visible
+            txtComment.BringToFront();
+            btnAddComment.BringToFront();
         }
 
         private void LoadComments(XmlNode post)
@@ -132,19 +156,22 @@ namespace FinalProject
             Panel panel = new Panel
             {
                 Width = commentsPanel.Width - 25,
+                MinimumSize = new Size(800, 0),
                 BackColor = Color.FromArgb(248, 249, 250),
                 BorderStyle = BorderStyle.None,
                 Margin = new Padding(0, 0, 0, 10),
-                Padding = new Padding(10)
+                Padding = new Padding(10),
+                Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top
             };
 
             Label commentText = new Label
             {
                 Text = text,
                 AutoSize = true,
-                MaximumSize = new Size(panel.Width - 20, 0),
+                MaximumSize = new Size(Math.Max(750, panel.Width - 40), 0),
                 Location = new Point(10, 10),
-                Font = new Font("Segoe UI", 10)
+                Font = new Font("Segoe UI", 10),
+                Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top
             };
 
             Label commentMeta = new Label
