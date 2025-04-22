@@ -78,7 +78,7 @@ namespace FinalProject
                     int newWidth = Math.Max(800, postContainer.Width - 50);
                     panel.Width = newWidth;
                     panel.MinimumSize = new Size(800, panel.Height);
-                    panel.MaximumSize = new Size(1200, 0);
+                    panel.MaximumSize = new Size(1200, 0); // 0 for height means no maximum height
 
                     // Update the width of labels inside the panel
                     foreach (Control childControl in panel.Controls)
