@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
+using System.IO;
 
 namespace FinalProject
 {
@@ -58,13 +59,13 @@ namespace FinalProject
 
         public void LoadPosts()
         {
-            postContainer.Controls.Clear(); 
+            postContainer.Controls.Clear();
 
             try
             {
                 XmlDocument doc = new XmlDocument();
-                doc.Load(path); 
-                XmlNodeList posts = doc.SelectNodes("/data/posts/post"); 
+                doc.Load(path);
+                XmlNodeList posts = doc.SelectNodes("/data/posts/post");
 
                 var sortedPosts = posts
                     .Cast<XmlNode>()
@@ -77,8 +78,27 @@ namespace FinalProject
                     string author = post["author"].InnerText;
                     string timestamp = post["timestamp"].InnerText;
 
+                    // Get or create post ID
+                    string postId;
+                    XmlAttribute idAttr = post.Attributes["id"];
+
+                    if (idAttr == null)
+                    {
+                        // Create a new ID for this post
+                        postId = Guid.NewGuid().ToString();
+                        XmlAttribute newIdAttr = doc.CreateAttribute("id");
+                        newIdAttr.Value = postId;
+                        post.Attributes.Append(newIdAttr);
+                        doc.Save(path);
+                    }
+                    else
+                    {
+                        postId = idAttr.Value;
+                    }
+
                     Panel postCardClone = ClonePostCard();
                     postCardClone.Visible = true;
+                    postCardClone.Tag = postId; // Store post ID in the Tag property
 
                     foreach (Control control in postCardClone.Controls)
                     {
@@ -107,7 +127,9 @@ namespace FinalProject
                 Size = postCard.Size,
                 BackColor = postCard.BackColor,
                 BorderStyle = postCard.BorderStyle,
-                Margin = postCard.Margin
+                Margin = postCard.Margin,
+                Cursor = Cursors.Hand,
+                Padding = postCard.Padding
             };
 
             foreach (Control ctrl in postCard.Controls)
@@ -118,10 +140,44 @@ namespace FinalProject
                 newCtrl.Location = ctrl.Location;
                 newCtrl.Font = ctrl.Font;
                 newCtrl.Name = ctrl.Name;
+                newCtrl.Cursor = Cursors.Hand;
                 newPanel.Controls.Add(newCtrl);
             }
 
+            // Add click event to the panel
+            newPanel.Click += PostCard_Click;
+
+            // Add hover effects
+            newPanel.MouseEnter += (sender, e) => {
+                newPanel.BackColor = Color.FromArgb(248, 249, 250);
+            };
+
+            newPanel.MouseLeave += (sender, e) => {
+                newPanel.BackColor = postCard.BackColor;
+            };
+
+            // Add click event to all controls inside the panel
+            foreach (Control ctrl in newPanel.Controls)
+            {
+                ctrl.Click += (sender, e) => PostCard_Click(newPanel, e);
+                ctrl.MouseEnter += (sender, e) => newPanel.BackColor = Color.FromArgb(248, 249, 250);
+                ctrl.MouseLeave += (sender, e) => newPanel.BackColor = postCard.BackColor;
+            }
+
             return newPanel;
+        }
+
+        private void PostCard_Click(object sender, EventArgs e)
+        {
+            if (sender is Panel panel)
+            {
+                // Get the post ID from the panel's Tag property
+                string postId = panel.Tag.ToString();
+
+                // Navigate to post detail view
+                Form1 mainForm = (Form1)this.FindForm();
+                mainForm.LoadPostDetail(postId);
+            }
         }
     }
 }

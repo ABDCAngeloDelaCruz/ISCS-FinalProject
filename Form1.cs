@@ -1,3 +1,6 @@
+using System;
+using System.Windows.Forms;
+
 namespace FinalProject
 {
     public partial class Form1 : Form
@@ -6,11 +9,16 @@ namespace FinalProject
         {
             InitializeComponent();
         }
-        private void LoadView(UserControl view)
+        public void LoadView(UserControl view)
         {
             panelMain.Controls.Clear();
             view.Dock = DockStyle.Fill;
             panelMain.Controls.Add(view);
+        }
+
+        public void LoadPostDetail(string postId)
+        {
+            LoadView(new PostDetail(postId));
         }
 
         bool menuExpand = false;

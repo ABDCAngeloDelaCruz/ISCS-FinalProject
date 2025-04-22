@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
+using System.IO;
 
 namespace FinalProject
 {
@@ -74,6 +75,11 @@ namespace FinalProject
 
             XmlElement postElement = doc.CreateElement("post");
 
+            // Add a unique ID attribute to the post
+            XmlAttribute idAttr = doc.CreateAttribute("id");
+            idAttr.Value = Guid.NewGuid().ToString();
+            postElement.Attributes.Append(idAttr);
+
             XmlElement titleElement = doc.CreateElement("title");
             titleElement.InnerText = title;
             postElement.AppendChild(titleElement);
@@ -89,6 +95,10 @@ namespace FinalProject
             XmlElement timestampElement = doc.CreateElement("timestamp");
             timestampElement.InnerText = timestamp;
             postElement.AppendChild(timestampElement);
+
+            // Create an empty comments section
+            XmlElement commentsElement = doc.CreateElement("comments");
+            postElement.AppendChild(commentsElement);
 
             postsNode.AppendChild(postElement);
             doc.Save(path);
