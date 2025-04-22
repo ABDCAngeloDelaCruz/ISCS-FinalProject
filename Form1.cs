@@ -78,5 +78,20 @@ namespace FinalProject
         {
             LoadView(new Register());
         }
+
+        private void addPost_Click(object sender, EventArgs e)
+        {
+            LoadView(new createPost());
+        }
+
+        private void newPosts_Click(object sender, EventArgs e)
+        {
+            LoadView(new newPosts());
+        }
+
+        private void trendingPosts_Click(object sender, EventArgs e)
+        {
+            LoadView(new createPost());
+        }
     }
 }

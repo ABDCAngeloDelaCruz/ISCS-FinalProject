@@ -94,26 +94,21 @@ namespace FinalProject
     }
     public class PasswordHelper
     {
-        // Hash the password with a salt
         public static string HashPassword(string password)
         {
-            // Create a salt (random bytes)
             using (var rng = new RNGCryptoServiceProvider())
             {
                 byte[] salt = new byte[16];
-                rng.GetBytes(salt); // Generate a 16-byte salt
+                rng.GetBytes(salt); 
 
-                // Use PBKDF2 to hash the password with the salt
-                using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000))  // 10,000 iterations
+                using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000)) 
                 {
-                    byte[] hash = pbkdf2.GetBytes(20);  // Generate a 20-byte hash
+                    byte[] hash = pbkdf2.GetBytes(20);  
 
-                    // Combine the salt and hash into a single byte array to store
                     byte[] hashBytes = new byte[36];
                     Array.Copy(salt, 0, hashBytes, 0, 16);
                     Array.Copy(hash, 0, hashBytes, 16, 20);
 
-                    // Convert the combined result to a base64 string and return
                     return Convert.ToBase64String(hashBytes);
                 }
             }
