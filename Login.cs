@@ -17,9 +17,6 @@ namespace FinalProject
     public partial class Login : UserControl
     {
         string IPAddress = "127.0.0.1";
-        XmlElement root;
-        static string relativePath = @"XMLFiles\data.xml";
-        string path = Path.Combine(Environment.CurrentDirectory, relativePath);
 
         public Login()
         {
@@ -69,24 +66,10 @@ namespace FinalProject
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                MessageBox.Show($"Error: {e.Message}");
+                MessageBox.Show($"Error: {ex.Message}");
             }
-        }
-
-        private bool VerifyLogin(string enteredUsername, string enteredPassword)
-        {
-            XmlNode userNode = root.SelectSingleNode($"users/user[username='{enteredUsername}']");
-
-            if (userNode != null)
-            {
-                string storedHashedPassword = userNode["password"].InnerText;
-
-                return LoginPasswordHelper.VerifyPassword(enteredPassword, storedHashedPassword);
-            }
-
-            return false;
         }
     }
 

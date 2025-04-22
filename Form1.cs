@@ -14,8 +14,9 @@ namespace FinalProject
 
         public void InitializeXML()
         {
+            string serverProjectDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\ForumServer\bin\Debug\net9.0");
             string relativePath = @"XMLFiles\data.xml";
-            string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+            string path = Path.Combine(serverProjectDirectory, relativePath);
 
             if (!File.Exists(path))
             {

@@ -20,81 +20,135 @@ class Program
             TcpClient client = listener.AcceptTcpClient();
             Console.WriteLine("New client connected.");
 
-            using (NetworkStream stream = client.GetStream())
-            using (StreamReader reader = new StreamReader(stream))
-            using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
+            using NetworkStream stream = client.GetStream();
+            using StreamReader reader = new StreamReader(stream);
+            using StreamWriter writer = new StreamWriter(stream) { AutoFlush = true };
+
+            object response;
+
+            try
             {
                 string requestJson = reader.ReadLine();
-                Console.WriteLine("Received JSON:");
-                Console.WriteLine(requestJson);
+                Console.WriteLine($"Received JSON:\n{requestJson}");
 
                 JsonDocument doc = JsonDocument.Parse(requestJson);
                 JsonElement root = doc.RootElement;
+
                 string action = root.GetProperty("action").GetString();
 
-                object response;
-
-                if (action == "register")
+                switch (action)
                 {
-                    string username = root.GetProperty("username").GetString();
-                    string password = root.GetProperty("password").GetString();
+                    case "register":
+                        response = HandleRegister(root);
+                        break;
 
-                    if (UsernameExists(username))
-                    {
-                        response = new { status = "error", message = "Username already taken." };
-                    }
-                    else
-                    {
-                        AddUserToXML(username, password);
-                        response = new { status = "success", message = "Registration successful." };
-                    }
+                    case "login":
+                        response = HandleLogin(root);
+                        break;
+
+                    case "createPost":
+                        response = HandleCreatePost(root);
+                        break;
+
+                    case "newPosts":
+                        response = HandleNewPosts();
+                        break;
+
+                    default:
+                        response = new { status = "error", message = "Invalid action." };
+                        break;
                 }
-                else if (action == "login")
-                {
-                    string username = root.GetProperty("username").GetString();
-                    string password = root.GetProperty("password").GetString();
-
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(path);
-                    XmlNode userNode = xmlDoc.SelectSingleNode($"//users/user[username='{username}']");
-
-                    if (userNode != null)
-                    {
-                        string storedHash = userNode["password"].InnerText;
-
-                        if (VerifyPassword(password, storedHash))
-                        {
-                            response = new { status = "success", message = "Login successful." };
-                        }
-                        else
-                        {
-                            response = new { status = "error", message = "Incorrect password." };
-                        }
-                    }
-                    else
-                    {
-                        response = new { status = "error", message = "Username not found." };
-                    }
-                }
-                else if (action == "createPost")
-                {
-
-                }
-                else if (action == "getPosts")
-                {
-                    
-                }
-                else
-                {
-                    response = new { status = "error", message = "An error occurred." };
-                }
-
-                string responseJson = JsonSerializer.Serialize(response);
-                writer.Write(responseJson);
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Server error: {ex.Message}");
+                response = new { status = "error", message = "Invalid request or internal error." };
+            }
+
+            string responseJson = JsonSerializer.Serialize(response);
+            writer.WriteLine(responseJson);
 
             client.Close();
         }
+    }
+
+    static object HandleRegister(JsonElement root)
+    {
+        string username = root.GetProperty("username").GetString();
+        string password = root.GetProperty("password").GetString();
+
+        if (UsernameExists(username))
+        {
+            return new { status = "error", message = "Username already taken." };
+        }
+
+        AddUserToXML(username, password);
+        return new { status = "success", message = "Registration successful." };
+    }
+    static object HandleLogin(JsonElement root)
+    {
+        string username = root.GetProperty("username").GetString();
+        string password = root.GetProperty("password").GetString();
+
+        XmlDocument xmlDoc = new XmlDocument();
+        xmlDoc.Load(path);
+        XmlNode userNode = xmlDoc.SelectSingleNode($"//users/user[username='{username}']");
+
+        if (userNode != null)
+        {
+            string storedHash = userNode["password"].InnerText;
+
+            if (VerifyPassword(password, storedHash))
+            {
+                return new { status = "success", message = "Login successful." };
+            }
+            else
+            {
+                return new { status = "error", message = "Incorrect password." };
+            }
+        }
+
+        return new { status = "error", message = "Username not found." };
+    }
+
+    static object HandleCreatePost(JsonElement root)
+    {
+        string title = root.GetProperty("title").GetString();
+        string content = root.GetProperty("content").GetString();
+        string author = root.GetProperty("author").GetString();
+        string timestamp = root.GetProperty("timestamp").GetString();
+
+        try
+        {
+            AddPostToXML(title, content, author, timestamp);
+            return new { status = "success", message = "Post created successfully." };
+        }
+        catch (Exception ex)
+        {
+            return new { status = "error", message = $"Failed to create post: {ex.Message}" };
+        }
+    }
+    static object HandleNewPosts()
+    {
+        XmlDocument doc = new XmlDocument();
+        doc.Load(path);
+        XmlNodeList posts = doc.SelectNodes("/data/posts/post");
+
+        List<object> postList = new List<object>();
+
+        foreach (XmlNode post in posts)
+        {
+            postList.Add(new
+            {
+                id = post.Attributes["id"]?.Value ?? "",
+                title = post["title"]?.InnerText ?? "",
+                content = post["content"]?.InnerText ?? "",
+                author = post["author"]?.InnerText ?? "",
+                timestamp = post["timestamp"]?.InnerText ?? ""
+            });
+        }
+
+        return new { status = "success", posts = postList };
     }
 
     static bool UsernameExists(string username)
@@ -110,12 +164,7 @@ class Program
         XmlDocument doc = new XmlDocument();
         doc.Load(path);
 
-        XmlNode usersNode = doc.SelectSingleNode("//users");
-        if (usersNode == null)
-        {
-            usersNode = doc.CreateElement("users");
-            doc.DocumentElement.AppendChild(usersNode);
-        }
+        XmlNode usersNode = doc.SelectSingleNode("//users") ?? doc.DocumentElement.AppendChild(doc.CreateElement("users"));
 
         XmlElement user = doc.CreateElement("user");
 
@@ -129,6 +178,39 @@ class Program
 
         usersNode.AppendChild(user);
         doc.Save(path);
+    }
+
+    static void AddPostToXML(string title, string content, string author, string timestamp)
+    {
+        XmlDocument xmlDoc = new XmlDocument();
+        xmlDoc.Load(path);
+        XmlNode rootNode = xmlDoc.DocumentElement;
+
+        XmlNode postsNode = rootNode.SelectSingleNode("posts");
+        if (postsNode == null)
+        {
+            postsNode = xmlDoc.CreateElement("posts");
+            rootNode.AppendChild(postsNode);
+        }
+
+        XmlElement postElement = xmlDoc.CreateElement("post");
+        postElement.SetAttribute("id", Guid.NewGuid().ToString());
+
+        void AddChild(string tag, string text)
+        {
+            XmlElement elem = xmlDoc.CreateElement(tag);
+            elem.InnerText = text;
+            postElement.AppendChild(elem);
+        }
+
+        AddChild("title", title);
+        AddChild("content", content);
+        AddChild("author", author);
+        AddChild("timestamp", timestamp);
+        postElement.AppendChild(xmlDoc.CreateElement("comments"));
+
+        postsNode.AppendChild(postElement);
+        xmlDoc.Save(path);
     }
 
     static bool VerifyPassword(string enteredPassword, string storedHash)

@@ -9,113 +9,47 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using System.IO;
+using System.Net.Sockets;
+using System.Text.Json;
 
 namespace FinalProject
 {
     public partial class newPosts : UserControl
     {
-        XmlDocument doc;
-        XmlElement root;
-        static string relativePath = @"XMLFiles\data.xml";
-        string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+        string IPAddress = "127.0.0.1";
 
         public newPosts()
         {
             InitializeComponent();
-            newPosts_Load(this, EventArgs.Empty);
-        }
-
-        public void newPosts_Load(object sender, EventArgs e)
-        {
-            try
-            {
-                doc = new XmlDocument();
-                doc.Load(path);
-                root = doc.DocumentElement;
-
-                if (root != null)
-                {
-                    XmlNodeList posts = root.SelectNodes("post");
-                    foreach (XmlNode post in posts)
-                    {
-                        string title = post["title"].InnerText;
-                        string content = post["content"].InnerText;
-                        string author = post["author"].InnerText;
-                        string timestamp = post["timestamp"].InnerText;
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("No data found.");
-                }
-
-                LoadPosts();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading XML: {ex.Message}");
-            }
+            LoadPosts();
         }
 
         public void LoadPosts()
         {
             postContainer.Controls.Clear();
 
-            try
+            var posts = NewPostsFromServer();
+
+            var sortedPosts = posts
+                .OrderByDescending(p => DateTime.Parse(p["timestamp"]));
+
+            foreach (var post in sortedPosts)
             {
-                XmlDocument doc = new XmlDocument();
-                doc.Load(path);
-                XmlNodeList posts = doc.SelectNodes("/data/posts/post");
+                Panel postCardClone = ClonePostCard();
+                postCardClone.Visible = true;
+                postCardClone.Tag = post["id"];
 
-                var sortedPosts = posts
-                    .Cast<XmlNode>()
-                    .OrderByDescending(p => DateTime.Parse(p["timestamp"].InnerText));
-
-                foreach (XmlNode post in sortedPosts)
+                foreach (Control control in postCardClone.Controls)
                 {
-                    string title = post["title"].InnerText;
-                    string content = post["content"].InnerText;
-                    string author = post["author"].InnerText;
-                    string timestamp = post["timestamp"].InnerText;
-
-                    // Get or create post ID
-                    string postId;
-                    XmlAttribute idAttr = post.Attributes["id"];
-
-                    if (idAttr == null)
-                    {
-                        // Create a new ID for this post
-                        postId = Guid.NewGuid().ToString();
-                        XmlAttribute newIdAttr = doc.CreateAttribute("id");
-                        newIdAttr.Value = postId;
-                        post.Attributes.Append(newIdAttr);
-                        doc.Save(path);
-                    }
-                    else
-                    {
-                        postId = idAttr.Value;
-                    }
-
-                    Panel postCardClone = ClonePostCard();
-                    postCardClone.Visible = true;
-                    postCardClone.Tag = postId; // Store post ID in the Tag property
-
-                    foreach (Control control in postCardClone.Controls)
-                    {
-                        if (control.Name == "postTitle")
-                            control.Text = title;
-                        else if (control.Name == "postConts")
-                            control.Text = content;
-                        else if (control.Name == "postMeta")
-                            control.Text = $"Posted by {author} • {DateTime.Parse(timestamp):g}";
-                    }
-
-                    postContainer.Controls.Add(postCardClone);
+                    if (control.Name == "postTitle")
+                        control.Text = post["title"];
+                    else if (control.Name == "postConts")
+                        control.Text = post["content"];
+                    else if (control.Name == "postMeta")
+                        control.Text = $"Posted by {post["author"]} • {DateTime.Parse(post["timestamp"]):g}";
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading posts: {ex.Message}");
+
+                postContainer.Controls.Add(postCardClone);
             }
         }
 
@@ -178,6 +112,50 @@ namespace FinalProject
                 Form1 mainForm = (Form1)this.FindForm();
                 mainForm.LoadPostDetail(postId);
             }
+        }
+
+        private List<Dictionary<string, string>> NewPostsFromServer()
+        {
+            List<Dictionary<string, string>> posts = new();
+
+            try
+            {
+                TcpClient client = new TcpClient("127.0.0.1", 8888);
+                using NetworkStream stream = client.GetStream();
+                using StreamWriter writer = new StreamWriter(stream) { AutoFlush = true };
+                using StreamReader reader = new StreamReader(stream);
+
+                var request = new { action = "getPosts" };
+                string jsonRequest = JsonSerializer.Serialize(request);
+                writer.WriteLine(jsonRequest);
+
+                string jsonResponse = reader.ReadLine();
+                var doc = JsonDocument.Parse(jsonResponse);
+                var root = doc.RootElement;
+
+                if (root.GetProperty("status").GetString() == "success")
+                {
+                    foreach (var post in root.GetProperty("posts").EnumerateArray())
+                    {
+                        posts.Add(new Dictionary<string, string>
+                {
+                    { "id", post.GetProperty("id").GetString() },
+                    { "title", post.GetProperty("title").GetString() },
+                    { "content", post.GetProperty("content").GetString() },
+                    { "author", post.GetProperty("author").GetString() },
+                    { "timestamp", post.GetProperty("timestamp").GetString() }
+                });
+                    }
+                }
+
+                client.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to fetch posts: {ex.Message}");
+            }
+
+            return posts;
         }
     }
 }

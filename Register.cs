@@ -70,9 +70,9 @@ namespace FinalProject
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                MessageBox.Show($"Server error: {e.Message}");
+                MessageBox.Show($"Server error: {ex.Message}");
             }
         }
     }
@@ -96,11 +96,6 @@ namespace FinalProject
                     return Convert.ToBase64String(hashBytes);
                 }
             }
-        }
-
-        internal static bool VerifyPassword(string enteredPassword, string storedHashedPassword)
-        {
-            throw new NotImplementedException();
         }
     }
 }
