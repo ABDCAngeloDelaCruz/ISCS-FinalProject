@@ -1,4 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 using System.IO;
 using System.Security.Cryptography;
 using System.Windows.Forms;
@@ -8,6 +18,7 @@ namespace FinalProject
 {
     public partial class Login : UserControl
     {
+        string IPAddress = "127.0.0.1";
         private XmlDocument? doc;
         private XmlElement? root;
         private static readonly string relativePath = @"XMLFiles\data.xml";
@@ -57,8 +68,8 @@ namespace FinalProject
 
         private void Submit_Click(object sender, EventArgs e)
         {
-            string enteredUsername = username.Text;
-            string enteredPassword = password.Text;
+            string enteredUsername = username.Text.Trim();
+            string enteredPassword = password.Text.Trim();
 
             if (string.IsNullOrEmpty(enteredUsername) || string.IsNullOrEmpty(enteredPassword))
             {
@@ -66,10 +77,14 @@ namespace FinalProject
                 return;
             }
 
-            bool isLoginSuccessful = VerifyLogin(enteredUsername, enteredPassword);
-
-            if (isLoginSuccessful)
+            var loginRequest = new
             {
+                action = "login",
+                username = enteredUsername,
+                password = enteredPassword
+            };
+
+            string requestJson = JsonSerializer.Serialize(loginRequest);
                 Session.LoggedInUsername = enteredUsername;
                 MessageBox.Show("Login successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -89,8 +104,17 @@ namespace FinalProject
 
             XmlNode? userNode = root.SelectSingleNode($"/data/users/user[username='{enteredUsername}']");
 
-            if (userNode != null)
+            try
             {
+                using (TcpClient client = new TcpClient(IPAddress, 8888))
+                using (NetworkStream stream = client.GetStream())
+                using (StreamReader reader = new StreamReader(stream))
+                using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
+                {
+                    writer.WriteLine(requestJson);
+                    string responseJson = reader.ReadLine();
+
+                    var response = JsonSerializer.Deserialize<Dictionary<string, string>>(responseJson);
                 var passwordNode = userNode["password"];
                 if (passwordNode != null)
                 {
@@ -99,7 +123,21 @@ namespace FinalProject
                 }
             }
 
-            return false;
+                    if (response["status"] == "success")
+                    {
+                        Session.LoggedInUsername = enteredUsername;
+                        MessageBox.Show("Login successful!");
+                    }
+                    else
+                    {
+                        MessageBox.Show(response["message"]);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
+            }
         }
     }
 

@@ -3,11 +3,16 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Windows.Forms;
 using System.Xml;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Net.Sockets;
 
 namespace FinalProject
 {
     public partial class Register : UserControl
     {
+        string IPAddress = "127.0.0.1";
         private XmlDocument? doc;
         private XmlElement? root;
         private static readonly string relativePath = @"XMLFiles\data.xml";
@@ -57,8 +62,8 @@ namespace FinalProject
 
         private void Submit_Click(object sender, EventArgs e)
         {
-            string name = username.Text;
-            string passwordInfo = password.Text;
+            string name = username.Text.Trim();
+            string passwordInfo = password.Text.Trim();
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(passwordInfo))
             {
@@ -81,20 +86,44 @@ namespace FinalProject
 
             string hashedPassword = PasswordHelper.HashPassword(passwordInfo);
 
-            XmlElement userElement = doc.CreateElement("user");
+            var request = new
+            {
+                action = "register",
+                username = name,
+                password = hashedPassword,
+            };
 
-            XmlElement usernameElement = doc.CreateElement("username");
-            usernameElement.InnerText = name;
-            userElement.AppendChild(usernameElement);
-
-            XmlElement passwordElement = doc.CreateElement("password");
-            passwordElement.InnerText = hashedPassword;
-            userElement.AppendChild(passwordElement);
-
+            string requestJson = JsonSerializer.Serialize(request);
             XmlNode? usersNode = root.SelectSingleNode("/data/users");
 
-            if (usersNode == null)
+            try
             {
+                using (TcpClient client = new TcpClient(IPAddress, 8888))
+                using (NetworkStream stream = client.GetStream())
+                using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    writer.WriteLine(requestJson);
+
+                    string responseJson = reader.ReadLine();
+                    var response = JsonSerializer.Deserialize<Dictionary<string, string>>(responseJson);
+
+                    if (response["status"] == "success")
+                    {
+                        MessageBox.Show("Registration successful!");
+                        username.Text = string.Empty;
+                        password.Text = string.Empty;
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Error: {response["message"]}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Server error: {ex.Message}");
+            }
                 usersNode = doc.CreateElement("users");
                 root.AppendChild(usersNode);
             }
@@ -162,5 +191,4 @@ namespace FinalProject
             }
         }
     }
-
 }

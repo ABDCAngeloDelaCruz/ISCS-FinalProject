@@ -1,13 +1,40 @@
 using System;
 using System.Windows.Forms;
+using System.Xml;
+using Timer = System.Timers.Timer;
 
 namespace FinalProject
 {
     public partial class Form1 : Form
     {
+        private Timer postUpdateTimer;
+
         public Form1()
         {
             InitializeComponent();
+            InitializeXML();
+            SetupPeriodicPostUpdate();
+        }
+
+        public void InitializeXML()
+        {
+            string serverProjectDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\ForumServer\bin\Debug\net9.0");
+            string relativePath = @"XMLFiles\data.xml";
+            string path = Path.Combine(serverProjectDirectory, relativePath);
+
+            if (!File.Exists(path))
+            {
+                XmlDocument doc = new XmlDocument();
+                XmlElement root = doc.CreateElement("data");
+                doc.AppendChild(root);
+                doc.Save(path);
+            }
+        }
+        public void LoadView(UserControl view)
+        {
+            panelMain.Controls.Clear();
+            view.Dock = DockStyle.Fill;
+            panelMain.Controls.Add(view);
 
             // Subscribe to login status changes
             Session.LoginStatusChanged += Session_LoginStatusChanged;
@@ -51,6 +78,17 @@ namespace FinalProject
             if (logout.Image != null)
                 logout.Image = ResizeImage(logout.Image, imageSize, imageSize);
         }
+
+        bool menuExpand = false;
+
+        private void SetupPeriodicPostUpdate()
+        {
+            postUpdateTimer = new Timer();
+            postUpdateTimer.Interval = 2000;
+            postUpdateTimer.Elapsed += (sender, e) => newPosts_Click(sender, e);
+            postUpdateTimer.Start();
+        }
+        private void menuTransition_Tick(object sender, EventArgs e)
 
         private Image ResizeImage(Image image, int width, int height)
         {

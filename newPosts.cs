@@ -9,19 +9,19 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using System.IO;
+using System.Net.Sockets;
+using System.Text.Json;
 
 namespace FinalProject
 {
     public partial class newPosts : UserControl
     {
-        XmlDocument doc;
-        XmlElement root;
-        static string relativePath = @"XMLFiles\data.xml";
-        string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+        string IPAddress = "127.0.0.1";
 
         public newPosts()
         {
             InitializeComponent();
+            LoadPosts();
             this.Resize += NewPosts_Resize;
 
             // Make sure the template post card is not visible
@@ -147,6 +147,25 @@ namespace FinalProject
         {
             postContainer.Controls.Clear();
 
+            var posts = NewPostsFromServer();
+
+            var sortedPosts = posts
+                .OrderByDescending(p => DateTime.Parse(p["timestamp"]));
+
+            foreach (var post in sortedPosts)
+            {
+                Panel postCardClone = ClonePostCard();
+                postCardClone.Visible = true;
+                postCardClone.Tag = post["id"];
+
+                foreach (Control control in postCardClone.Controls)
+                {
+                    if (control.Name == "postTitle")
+                        control.Text = post["title"];
+                    else if (control.Name == "postConts")
+                        control.Text = post["content"];
+                    else if (control.Name == "postMeta")
+                        control.Text = $"Posted by {post["author"]} • {DateTime.Parse(post["timestamp"]):g}";
             // No debug label needed
 
             try
@@ -239,10 +258,8 @@ namespace FinalProject
                         MessageBox.Show($"Error creating post card: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading posts: {ex.Message}");
+
+                postContainer.Controls.Add(postCardClone);
             }
         }
 
@@ -359,6 +376,50 @@ namespace FinalProject
                 Form1 mainForm = (Form1)this.FindForm();
                 mainForm.LoadPostDetail(postId);
             }
+        }
+
+        private List<Dictionary<string, string>> NewPostsFromServer()
+        {
+            List<Dictionary<string, string>> posts = new();
+
+            try
+            {
+                TcpClient client = new TcpClient(IPAddress, 8888);
+                using NetworkStream stream = client.GetStream();
+                using StreamWriter writer = new StreamWriter(stream) { AutoFlush = true };
+                using StreamReader reader = new StreamReader(stream);
+
+                var request = new { action = "getPosts" };
+                string jsonRequest = JsonSerializer.Serialize(request);
+                writer.WriteLine(jsonRequest);
+
+                string jsonResponse = reader.ReadLine();
+                var doc = JsonDocument.Parse(jsonResponse);
+                var root = doc.RootElement;
+
+                if (root.GetProperty("status").GetString() == "success")
+                {
+                    foreach (var post in root.GetProperty("posts").EnumerateArray())
+                    {
+                        posts.Add(new Dictionary<string, string>
+                {
+                    { "id", post.GetProperty("id").GetString() },
+                    { "title", post.GetProperty("title").GetString() },
+                    { "content", post.GetProperty("content").GetString() },
+                    { "author", post.GetProperty("author").GetString() },
+                    { "timestamp", post.GetProperty("timestamp").GetString() }
+                });
+                    }
+                }
+
+                client.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to fetch posts: {ex.Message}");
+            }
+
+            return posts;
         }
     }
 }

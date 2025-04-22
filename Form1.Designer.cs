@@ -56,9 +56,7 @@
             panel6.SuspendLayout();
             pnLogin.SuspendLayout();
             panel5.SuspendLayout();
-            pnLogout.SuspendLayout();
-            SuspendLayout();
-            //
+
             // sidebar
             //
             sidebar.BackColor = Color.FromArgb(40, 40, 55);
