@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35707.178 d17.12
+VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinalProject", "FinalProject.csproj", "{2CCA2114-CF98-4736-9B01-033B1A9D5BB3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForumServer", "ForumServer\ForumServer.csproj", "{E599C556-83D0-4048-8F45-0040422D623B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{2CCA2114-CF98-4736-9B01-033B1A9D5BB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CCA2114-CF98-4736-9B01-033B1A9D5BB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CCA2114-CF98-4736-9B01-033B1A9D5BB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E599C556-83D0-4048-8F45-0040422D623B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E599C556-83D0-4048-8F45-0040422D623B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E599C556-83D0-4048-8F45-0040422D623B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E599C556-83D0-4048-8F45-0040422D623B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

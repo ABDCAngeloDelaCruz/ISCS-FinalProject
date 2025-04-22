@@ -4,8 +4,10 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
@@ -14,7 +16,7 @@ namespace FinalProject
 {
     public partial class Login : UserControl
     {
-        XmlDocument doc;
+        string IPAddress = "127.0.0.1";
         XmlElement root;
         static string relativePath = @"XMLFiles\data.xml";
         string path = Path.Combine(Environment.CurrentDirectory, relativePath);
@@ -22,33 +24,12 @@ namespace FinalProject
         public Login()
         {
             InitializeComponent();
-            Login_Load(this, EventArgs.Empty);
-        }
-
-        public void Login_Load(object sender, EventArgs e)
-        {
-            doc = new XmlDocument();
-            doc.Load(path);
-            root = doc.DocumentElement;
-            if (root != null)
-            {
-                XmlNodeList users = root.SelectNodes("user");
-                foreach (XmlNode user in users)
-                {
-                    string username = user["username"].InnerText;
-                    string password = user["password"].InnerText;
-                }
-            }
-            else
-            {
-                MessageBox.Show("No data found.");
-            }
         }
 
         private void submit_Click(object sender, EventArgs e)
         {
-            string enteredUsername = username.Text;
-            string enteredPassword = password.Text;
+            string enteredUsername = username.Text.Trim();
+            string enteredPassword = password.Text.Trim();
 
             if (string.IsNullOrEmpty(enteredUsername) || string.IsNullOrEmpty(enteredPassword))
             {
@@ -56,16 +37,41 @@ namespace FinalProject
                 return;
             }
 
-            bool isLoginSuccessful = VerifyLogin(enteredUsername, enteredPassword);
+            var loginRequest = new
+            {
+                action = "login",
+                username = enteredUsername,
+                password = enteredPassword
+            };
 
-            if (isLoginSuccessful)
+            string requestJson = JsonSerializer.Serialize(loginRequest);
+
+            try
             {
-                Session.LoggedInUsername = enteredUsername;
-                MessageBox.Show("Login successful!");
+                using (TcpClient client = new TcpClient(IPAddress, 8888))
+                using (NetworkStream stream = client.GetStream())
+                using (StreamReader reader = new StreamReader(stream))
+                using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
+                {
+                    writer.WriteLine(requestJson);
+                    string responseJson = reader.ReadLine();
+
+                    var response = JsonSerializer.Deserialize<Dictionary<string, string>>(responseJson);
+
+                    if (response["status"] == "success")
+                    {
+                        Session.LoggedInUsername = enteredUsername;
+                        MessageBox.Show("Login successful!");
+                    }
+                    else
+                    {
+                        MessageBox.Show(response["message"]);
+                    }
+                }
             }
-            else
+            catch (Exception e)
             {
-                MessageBox.Show("Invalid username or password.");
+                MessageBox.Show($"Error: {e.Message}");
             }
         }
 

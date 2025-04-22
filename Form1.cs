@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Forms;
+using System.Xml;
 
 namespace FinalProject
 {
@@ -8,6 +9,21 @@ namespace FinalProject
         public Form1()
         {
             InitializeComponent();
+            InitializeXML();
+        }
+
+        public void InitializeXML()
+        {
+            string relativePath = @"XMLFiles\data.xml";
+            string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+
+            if (!File.Exists(path))
+            {
+                XmlDocument doc = new XmlDocument();
+                XmlElement root = doc.CreateElement("data");
+                doc.AppendChild(root);
+                doc.Save(path);
+            }
         }
         public void LoadView(UserControl view)
         {

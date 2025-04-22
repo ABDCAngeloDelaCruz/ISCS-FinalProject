@@ -10,45 +10,24 @@ using System.Windows.Forms;
 using System.Xml;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Net.Sockets;
 
 namespace FinalProject
 {
     public partial class Register : UserControl
     {
-        XmlDocument doc;
-        XmlElement root;
-        static string relativePath = @"XMLFiles\data.xml";
-        string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+        string IPAddress = "127.0.0.1";
+
         public Register()
         {
             InitializeComponent();
-            Register_Load(this, EventArgs.Empty);
-        }
-
-        public void Register_Load(object sender, EventArgs e)
-        {
-            doc = new XmlDocument();
-            doc.Load(path);
-            root = doc.DocumentElement;
-
-            if (root != null){
-                XmlNodeList users = root.SelectNodes("user");
-                foreach (XmlNode user in users)
-                {
-                    string username = user["username"].InnerText;
-                    string password = user["password"].InnerText;
-                }
-            }
-            else
-            {
-                MessageBox.Show("No data found.");
-            }
         }
 
         private void submit_Click(object sender, EventArgs e)
         {
-            string name = username.Text;
-            string passwordInfo = password.Text;
+            string name = username.Text.Trim();
+            string passwordInfo = password.Text.Trim();
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(passwordInfo))
             {
@@ -56,40 +35,45 @@ namespace FinalProject
                 return;
             }
 
-            XmlNode existingUser = root.SelectSingleNode($"users/user[username='{name}']");
-            if (existingUser != null)
-            {
-                MessageBox.Show("Username already exists. Please choose a different one.");
-                return;
-            }
-
             string hashedPassword = PasswordHelper.HashPassword(passwordInfo);
 
-            XmlElement userElement = doc.CreateElement("user");
-
-            XmlElement usernameElement = doc.CreateElement("username");
-            usernameElement.InnerText = name;
-            userElement.AppendChild(usernameElement);
-
-            XmlElement passwordElement = doc.CreateElement("password");
-            passwordElement.InnerText = hashedPassword;
-            userElement.AppendChild(passwordElement);
-
-            XmlNode usersNode = root.SelectSingleNode("users");
-
-            if (usersNode == null)
+            var request = new
             {
-                usersNode = doc.CreateElement("users");
-                root.AppendChild(usersNode); 
+                action = "register",
+                username = name,
+                password = hashedPassword,
+            };
+
+            string requestJson = JsonSerializer.Serialize(request);
+
+            try
+            {
+                using (TcpClient client = new TcpClient(IPAddress, 8888))
+                using (NetworkStream stream = client.GetStream())
+                using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    writer.WriteLine(requestJson);
+
+                    string responseJson = reader.ReadLine();
+                    var response = JsonSerializer.Deserialize<Dictionary<string, string>>(responseJson);
+
+                    if (response["status"] == "success")
+                    {
+                        MessageBox.Show("Registration successful!");
+                        username.Text = string.Empty;
+                        password.Text = string.Empty;
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Error: {response["message"]}");
+                    }
+                }
             }
-
-            usersNode.AppendChild(userElement);
-
-            doc.Save(path);
-            MessageBox.Show("Registration Successful");
-
-            username.Text = string.Empty;
-            password.Text = string.Empty;
+            catch (Exception e)
+            {
+                MessageBox.Show($"Server error: {e.Message}");
+            }
         }
     }
     public class PasswordHelper
@@ -119,5 +103,4 @@ namespace FinalProject
             throw new NotImplementedException();
         }
     }
-
 }
