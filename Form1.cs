@@ -1,15 +1,19 @@
 using System;
 using System.Windows.Forms;
 using System.Xml;
+using Timer = System.Timers.Timer;
 
 namespace FinalProject
 {
     public partial class Form1 : Form
     {
+        private Timer postUpdateTimer;
+
         public Form1()
         {
             InitializeComponent();
             InitializeXML();
+            SetupPeriodicPostUpdate();
         }
 
         public void InitializeXML()
@@ -39,6 +43,14 @@ namespace FinalProject
         }
 
         bool menuExpand = false;
+
+        private void SetupPeriodicPostUpdate()
+        {
+            postUpdateTimer = new Timer();
+            postUpdateTimer.Interval = 2000;
+            postUpdateTimer.Elapsed += (sender, e) => newPosts_Click(sender, e);
+            postUpdateTimer.Start();
+        }
         private void menuTransition_Tick(object sender, EventArgs e)
         {
             if (menuExpand == false)

@@ -120,7 +120,7 @@ namespace FinalProject
 
             try
             {
-                TcpClient client = new TcpClient("127.0.0.1", 8888);
+                TcpClient client = new TcpClient(IPAddress, 8888);
                 using NetworkStream stream = client.GetStream();
                 using StreamWriter writer = new StreamWriter(stream) { AutoFlush = true };
                 using StreamReader reader = new StreamReader(stream);
