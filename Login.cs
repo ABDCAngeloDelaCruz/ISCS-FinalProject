@@ -17,6 +17,23 @@ namespace FinalProject
         {
             InitializeComponent();
             LoadXmlData();
+
+            // Set focus to the username field when the form loads
+            this.Load += (s, e) => username.Focus();
+
+            // Add hover effect to submit button
+            submit.MouseEnter += (s, e) => submit.BackColor = Color.FromArgb(32, 33, 36);
+            submit.MouseLeave += (s, e) => submit.BackColor = Color.FromArgb(23, 24, 29);
+
+            // Add Enter key handling for password field
+            password.KeyDown += (s, e) => {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    Submit_Click(submit, EventArgs.Empty);
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                }
+            };
         }
 
         private void LoadXmlData()
