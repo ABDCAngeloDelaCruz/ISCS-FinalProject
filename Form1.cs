@@ -13,7 +13,7 @@ namespace FinalProject
         {
             InitializeComponent();
             InitializeXML();
-            SetupPeriodicPostUpdate();
+            InitializeUI();
         }
 
         public void InitializeXML()
@@ -30,12 +30,8 @@ namespace FinalProject
                 doc.Save(path);
             }
         }
-        public void LoadView(UserControl view)
+        public void InitializeUI()
         {
-            panelMain.Controls.Clear();
-            view.Dock = DockStyle.Fill;
-            panelMain.Controls.Add(view);
-
             // Subscribe to login status changes
             Session.LoginStatusChanged += Session_LoginStatusChanged;
 
@@ -49,9 +45,6 @@ namespace FinalProject
 
             // Resize button images to make them smaller
             ResizeButtonImages();
-
-            // Load the default view
-            LoadView(new newPosts());
         }
 
         private void ResizeButtonImages()
@@ -81,14 +74,6 @@ namespace FinalProject
 
         bool menuExpand = false;
 
-        private void SetupPeriodicPostUpdate()
-        {
-            postUpdateTimer = new Timer();
-            postUpdateTimer.Interval = 2000;
-            postUpdateTimer.Elapsed += (sender, e) => newPosts_Click(sender, e);
-            postUpdateTimer.Start();
-        }
-        private void menuTransition_Tick(object sender, EventArgs e)
 
         private Image ResizeImage(Image image, int width, int height)
         {

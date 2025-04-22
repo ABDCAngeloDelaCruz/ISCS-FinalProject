@@ -1,16 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.IO;
-using System.Security.Cryptography;
 using System.Windows.Forms;
 using System.Xml;
 
@@ -18,11 +12,11 @@ namespace FinalProject
 {
     public partial class Login : UserControl
     {
-        string IPAddress = "127.0.0.1";
+        private readonly string IPAddress = "127.0.0.1";
         private XmlDocument? doc;
         private XmlElement? root;
         private static readonly string relativePath = @"XMLFiles\data.xml";
-        private readonly string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+        private readonly string path = @"C:\Users\Zygos\Documents\ISCS\FinalProject\ForumServer\bin\Debug\net9.0\XMLFiles\data.xml";
 
         public Login()
         {
@@ -30,7 +24,7 @@ namespace FinalProject
             LoadXmlData();
 
             // Set focus to the username field when the form loads
-            this.Load += (s, e) => username.Focus();
+            Load += (s, e) => username.Focus();
 
             // Add hover effect to submit button
             submit.MouseEnter += (s, e) => submit.BackColor = Color.FromArgb(32, 33, 36);
@@ -77,66 +71,114 @@ namespace FinalProject
                 return;
             }
 
-            var loginRequest = new
+            // First try to authenticate with XML file
+            if (AuthenticateWithXml(enteredUsername, enteredPassword))
             {
-                action = "login",
-                username = enteredUsername,
-                password = enteredPassword
-            };
-
-            string requestJson = JsonSerializer.Serialize(loginRequest);
-                Session.LoggedInUsername = enteredUsername;
-                MessageBox.Show("Login successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                // Navigate to the posts view
-                var form = FindForm() as Form1;
-                form?.LoadView(new newPosts());
+                LoginSuccessful(enteredUsername);
+                return;
             }
-            else
-            {
-                MessageBox.Show("Invalid username or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
 
-        private bool VerifyLogin(string enteredUsername, string enteredPassword)
-        {
-            if (root == null) return false;
-
-            XmlNode? userNode = root.SelectSingleNode($"/data/users/user[username='{enteredUsername}']");
-
+            // If XML authentication fails, try server authentication
             try
             {
-                using (TcpClient client = new TcpClient(IPAddress, 8888))
-                using (NetworkStream stream = client.GetStream())
-                using (StreamReader reader = new StreamReader(stream))
-                using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
+                var loginRequest = new
                 {
-                    writer.WriteLine(requestJson);
-                    string responseJson = reader.ReadLine();
+                    action = "login",
+                    username = enteredUsername,
+                    password = enteredPassword
+                };
 
+                string requestJson = JsonSerializer.Serialize(loginRequest);
+
+                using TcpClient client = new(IPAddress, 8888);
+                using NetworkStream stream = client.GetStream();
+                using StreamReader reader = new(stream);
+                using StreamWriter writer = new(stream) { AutoFlush = true };
+
+                writer.WriteLine(requestJson);
+                string? responseJson = reader.ReadLine();
+
+                if (responseJson != null)
+                {
                     var response = JsonSerializer.Deserialize<Dictionary<string, string>>(responseJson);
-                var passwordNode = userNode["password"];
-                if (passwordNode != null)
-                {
-                    string storedHashedPassword = passwordNode.InnerText;
-                    return LoginPasswordHelper.VerifyPassword(enteredPassword, storedHashedPassword);
-                }
-            }
 
-                    if (response["status"] == "success")
+                    if (response != null && response.TryGetValue("status", out string? status) && status == "success")
                     {
-                        Session.LoggedInUsername = enteredUsername;
-                        MessageBox.Show("Login successful!");
-                    }
-                    else
-                    {
-                        MessageBox.Show(response["message"]);
+                        LoginSuccessful(enteredUsername);
+                        return;
                     }
                 }
+
+                // If we get here, login failed
+                MessageBox.Show("Invalid username or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}");
+                // Server connection failed, but we already tried XML authentication
+                MessageBox.Show("Invalid username or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Console.WriteLine($"Server connection error: {ex.Message}");
+            }
+        }
+
+        private bool AuthenticateWithXml(string username, string password)
+        {
+            try
+            {
+                if (doc == null || root == null)
+                {
+                    LoadXmlData();
+                }
+
+                if (root == null) return false;
+
+                // Find the user in the XML file
+                XmlNode? userNode = root.SelectSingleNode($"//users/user[username='{username}']");
+
+                if (userNode == null)
+                {
+                    // Try a different XPath if the first one doesn't work
+                    userNode = root.SelectSingleNode($"//user[username='{username}']");
+                }
+
+                if (userNode != null)
+                {
+                    XmlNode? passwordNode = userNode.SelectSingleNode("password");
+                    if (passwordNode != null)
+                    {
+                        string storedPassword = passwordNode.InnerText;
+
+                        // First try direct comparison (for testing/development)
+                        if (password == storedPassword)
+                        {
+                            return true;
+                        }
+
+                        // Then try hashed password verification
+                        if (LoginPasswordHelper.VerifyPassword(password, storedPassword))
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"XML authentication error: {ex.Message}");
+                return false;
+            }
+        }
+
+        private void LoginSuccessful(string username)
+        {
+            Session.LoggedInUsername = username;
+            MessageBox.Show("Login successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            // Navigate to the posts view
+            if (FindForm() is Form1 form)
+            {
+                form.LoadView(new newPosts());
             }
         }
     }

@@ -1,22 +1,22 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Text.Json;
+using System.IO;
 using System.Windows.Forms;
 using System.Xml;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Net.Sockets;
 
 namespace FinalProject
 {
     public partial class Register : UserControl
     {
-        string IPAddress = "127.0.0.1";
+        private readonly string IPAddress = "127.0.0.1";
         private XmlDocument? doc;
         private XmlElement? root;
         private static readonly string relativePath = @"XMLFiles\data.xml";
-        private readonly string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+        private readonly string path = @"C:\Users\Zygos\Documents\ISCS\FinalProject\ForumServer\bin\Debug\net9.0\XMLFiles\data.xml";
 
         public Register()
         {
@@ -24,7 +24,7 @@ namespace FinalProject
             LoadXmlData();
 
             // Set focus to the username field when the form loads
-            this.Load += (s, e) => username.Focus();
+            Load += (s, e) => username.Focus();
 
             // Add hover effect to submit button
             submit.MouseEnter += (s, e) => submit.BackColor = Color.FromArgb(32, 33, 36);
@@ -93,51 +93,51 @@ namespace FinalProject
                 password = hashedPassword,
             };
 
-            string requestJson = JsonSerializer.Serialize(request);
-            XmlNode? usersNode = root.SelectSingleNode("/data/users");
-
             try
             {
-                using (TcpClient client = new TcpClient(IPAddress, 8888))
-                using (NetworkStream stream = client.GetStream())
-                using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    writer.WriteLine(requestJson);
+                string requestJson = JsonSerializer.Serialize(request);
 
-                    string responseJson = reader.ReadLine();
+                using TcpClient client = new(IPAddress, 8888);
+                using NetworkStream stream = client.GetStream();
+                using StreamWriter writer = new(stream) { AutoFlush = true };
+                using StreamReader reader = new(stream);
+
+                writer.WriteLine(requestJson);
+
+                string? responseJson = reader.ReadLine();
+                if (responseJson != null)
+                {
                     var response = JsonSerializer.Deserialize<Dictionary<string, string>>(responseJson);
 
-                    if (response["status"] == "success")
+                    if (response != null && response.TryGetValue("status", out string? status) && status == "success")
                     {
-                        MessageBox.Show("Registration successful!");
+                        MessageBox.Show("Registration successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         username.Text = string.Empty;
                         password.Text = string.Empty;
+
+                        // Navigate to the login view
+                        if (FindForm() is Form1 form)
+                        {
+                            form.LoadView(new Login());
+                        }
+                        return;
                     }
-                    else
+                    else if (response != null && response.TryGetValue("message", out string? message))
                     {
-                        MessageBox.Show($"Error: {response["message"]}");
+                        MessageBox.Show($"Error: {message}", "Registration Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
                     }
                 }
+
+                MessageBox.Show("Registration failed. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Server error: {ex.Message}");
+                MessageBox.Show($"Server error: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-                usersNode = doc.CreateElement("users");
-                root.AppendChild(usersNode);
-            }
-
-            usersNode.AppendChild(userElement);
-
-            doc.Save(path);
-            MessageBox.Show("Registration Successful", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-            // Navigate to the login view
-            var form = FindForm() as Form1;
-            form?.LoadView(new Login());
         }
     }
+
     public class PasswordHelper
     {
         public static string HashPassword(string password)

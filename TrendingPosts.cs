@@ -14,10 +14,10 @@ namespace FinalProject
 {
     public partial class TrendingPosts : UserControl
     {
-        XmlDocument doc;
-        XmlElement root;
-        static string relativePath = @"XMLFiles\data.xml";
-        string path = Path.Combine(Environment.CurrentDirectory, relativePath);
+        private XmlDocument? doc;
+        private XmlElement? root;
+        private static readonly string relativePath = @"XMLFiles\data.xml";
+        private readonly string path = @"C:\Users\Zygos\Documents\ISCS\FinalProject\ForumServer\bin\Debug\net9.0\XMLFiles\data.xml";
 
         public TrendingPosts()
         {
