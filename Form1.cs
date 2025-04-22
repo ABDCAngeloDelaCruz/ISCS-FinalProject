@@ -15,6 +15,11 @@ namespace FinalProject
             // Initialize UI based on current login status
             UpdateUIForLoginStatus(Session.IsLoggedIn);
 
+            // Set default button colors
+            newPosts.BackColor = Color.FromArgb(23, 24, 29); // Active button - darker
+            trendingPosts.BackColor = Color.FromArgb(32, 33, 36); // Inactive button
+            // addPost should keep its original color from Designer.cs
+
             // Load the default view
             LoadView(new newPosts());
         }
@@ -47,10 +52,14 @@ namespace FinalProject
             view.Visible = true;
             view.BringToFront();
 
-            // If it's a newPosts view, make sure to load posts
+            // If it's a newPosts or TrendingPosts view, make sure to load posts
             if (view is newPosts postsView)
             {
                 postsView.LoadPosts();
+            }
+            else if (view is TrendingPosts trendingView)
+            {
+                trendingView.LoadPosts();
             }
         }
 
@@ -127,17 +136,38 @@ namespace FinalProject
 
         private void addPost_Click(object sender, EventArgs e)
         {
+            // Reset Posts tab button colors
+            newPosts.BackColor = Color.FromArgb(32, 33, 36); // Inactive
+            trendingPosts.BackColor = Color.FromArgb(32, 33, 36); // Inactive
+
+            // The Create button (addPost) color should remain unchanged
+            // as it's not part of the Posts tab group
+
             LoadView(new createPost());
         }
 
         private void newPosts_Click(object sender, EventArgs e)
         {
+            // Reset button colors
+            trendingPosts.BackColor = Color.FromArgb(32, 33, 36); // Inactive
+            // Don't change addPost button color
+
+            // Highlight the new posts button
+            newPosts.BackColor = Color.FromArgb(23, 24, 29); // Active - darker
+
             LoadView(new newPosts());
         }
 
         private void trendingPosts_Click(object sender, EventArgs e)
         {
-            LoadView(new createPost());
+            // Reset button colors
+            newPosts.BackColor = Color.FromArgb(32, 33, 36); // Inactive
+            // Don't change addPost button color
+
+            // Highlight the trending button
+            trendingPosts.BackColor = Color.FromArgb(23, 24, 29); // Active - darker
+
+            LoadView(new TrendingPosts());
         }
 
         private void logout_Click(object sender, EventArgs e)
@@ -152,6 +182,10 @@ namespace FinalProject
 
                 // Show a message
                 MessageBox.Show("You have been logged out successfully.", "Logout Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                // Reset Posts tab button colors
+                newPosts.BackColor = Color.FromArgb(23, 24, 29); // Active button - darker
+                trendingPosts.BackColor = Color.FromArgb(32, 33, 36); // Inactive button
 
                 // Navigate to the posts view
                 LoadView(new newPosts());
