@@ -20,8 +20,57 @@ namespace FinalProject
             trendingPosts.BackColor = Color.FromArgb(32, 33, 36); // Inactive button
             // addPost should keep its original color from Designer.cs
 
+            // Resize button images to make them smaller
+            ResizeButtonImages();
+
             // Load the default view
             LoadView(new newPosts());
+        }
+
+        private void ResizeButtonImages()
+        {
+            // Set a smaller size for all button images
+            int imageSize = 20; // Smaller image size
+
+            // Resize images for all sidebar buttons
+            if (newPosts.Image != null)
+                newPosts.Image = ResizeImage(newPosts.Image, imageSize, imageSize);
+
+            if (trendingPosts.Image != null)
+                trendingPosts.Image = ResizeImage(trendingPosts.Image, imageSize, imageSize);
+
+            if (addPost.Image != null)
+                addPost.Image = ResizeImage(addPost.Image, imageSize, imageSize);
+
+            if (login.Image != null)
+                login.Image = ResizeImage(login.Image, imageSize, imageSize);
+
+            if (register.Image != null)
+                register.Image = ResizeImage(register.Image, imageSize, imageSize);
+
+            if (logout.Image != null)
+                logout.Image = ResizeImage(logout.Image, imageSize, imageSize);
+        }
+
+        private Image ResizeImage(Image image, int width, int height)
+        {
+            // Create a new bitmap with the desired size
+            Bitmap result = new Bitmap(width, height);
+
+            // Create a graphics object to draw the resized image
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                // Set the interpolation mode for better quality
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+
+                // Draw the image with the new size
+                g.DrawImage(image, 0, 0, width, height);
+            }
+
+            return result;
         }
 
         private void Session_LoginStatusChanged(object sender, LoginStatusChangedEventArgs e)
@@ -68,61 +117,10 @@ namespace FinalProject
             LoadView(new PostDetail(postId));
         }
 
-        bool menuExpand = false;
-        private void menuTransition_Tick(object sender, EventArgs e)
-        {
-            if (menuExpand == false)
-            {
-                postContainer.Height += 10;
-                if (postContainer.Height >= 166)
-                {
+        // Removed dropdown functionality
+        // Removed sidebar toggle functionality
 
-                    menuTransition.Stop();
-                    menuExpand = true;
-                }
-            }
-            else
-            {
-                postContainer.Height -= 10;
-                if (postContainer.Height <= 48)
-                {
-                    menuTransition.Stop();
-                    menuExpand = false;
-                }
-            }
-        }
-
-        private void posts_Click(object sender, EventArgs e)
-        {
-            menuTransition.Start();
-        }
-        bool sidebarExpand = true;
-        private void sidebarTransition_Tick(object sender, EventArgs e)
-        {
-            if (sidebarExpand)
-            {
-                sidebar.Width -= 10;
-                if (sidebar.Width <= 81)
-                {
-                    sidebarExpand = false;
-                    sidebarTransition.Stop();
-                }
-            }
-            else
-            {
-                sidebar.Width += 10;
-                if (sidebar.Width >= 223)
-                {
-                    sidebarExpand = true;
-                    sidebarTransition.Stop();
-                }
-            }
-        }
-
-        private void pictureBox1_Click(object sender, EventArgs e)
-        {
-            sidebarTransition.Start();
-        }
+        // Removed burger menu functionality
 
         private void login_Click(object sender, EventArgs e)
         {
