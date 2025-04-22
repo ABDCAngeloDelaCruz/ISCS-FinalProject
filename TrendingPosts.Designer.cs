@@ -1,13 +1,13 @@
-﻿namespace FinalProject
+namespace FinalProject
 {
-    partial class newPosts
+    partial class TrendingPosts
     {
-        /// <summary>
+        /// <summary> 
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
+        /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
@@ -22,8 +22,8 @@
 
         #region Component Designer generated code
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
@@ -72,7 +72,7 @@
             postMeta.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
             postMeta.Location = new Point(3, 123);
             postMeta.Name = "postMeta";
-            postMeta.Size = new Size(297, 18);
+            postMeta.Size = new Size(780, 18);
             postMeta.TabIndex = 2;
             postMeta.Text = "Meta";
             postMeta.TextAlign = ContentAlignment.TopRight;
@@ -97,12 +97,12 @@
             postTitle.TabIndex = 0;
             postTitle.Text = "Title";
             //
-            // newPosts
+            // TrendingPosts
             //
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(postContainer);
-            Name = "newPosts";
+            Name = "TrendingPosts";
             Size = new Size(900, 600);
             postContainer.ResumeLayout(false);
             postCard.ResumeLayout(false);
@@ -112,7 +112,6 @@
         #endregion
 
         private FlowLayoutPanel postContainer;
-        private Panel pnTitle;
         private Panel postCard;
         private Label postMeta;
         private Label postConts;

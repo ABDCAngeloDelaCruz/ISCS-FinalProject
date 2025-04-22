@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -9,20 +9,20 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using System.IO;
-using System.Net.Sockets;
-using System.Text.Json;
 
 namespace FinalProject
 {
-    public partial class newPosts : UserControl
+    public partial class TrendingPosts : UserControl
     {
-        string IPAddress = "127.0.0.1";
+        XmlDocument doc;
+        XmlElement root;
+        static string relativePath = @"XMLFiles\data.xml";
+        string path = Path.Combine(Environment.CurrentDirectory, relativePath);
 
-        public newPosts()
+        public TrendingPosts()
         {
             InitializeComponent();
-            LoadPosts();
-            this.Resize += NewPosts_Resize;
+            this.Resize += TrendingPosts_Resize;
 
             // Make sure the template post card is not visible
             postCard.Visible = false;
@@ -36,7 +36,7 @@ namespace FinalProject
             };
 
             // Also load posts immediately
-            newPosts_Load(this, EventArgs.Empty);
+            TrendingPosts_Load(this, EventArgs.Empty);
         }
 
         private void SetupPostCardTemplate()
@@ -67,7 +67,7 @@ namespace FinalProject
             }
         }
 
-        private void NewPosts_Resize(object sender, EventArgs e)
+        private void TrendingPosts_Resize(object sender, EventArgs e)
         {
             // Update post card widths when the control is resized
             foreach (Control control in postContainer.Controls)
@@ -78,7 +78,7 @@ namespace FinalProject
                     int newWidth = Math.Max(800, postContainer.Width - 50);
                     panel.Width = newWidth;
                     panel.MinimumSize = new Size(800, panel.Height);
-                    panel.MaximumSize = new Size(1200, 0); // 0 for height means no maximum height
+                    panel.MaximumSize = new Size(1200, 0);
 
                     // Update the width of labels inside the panel
                     foreach (Control childControl in panel.Controls)
@@ -116,7 +116,7 @@ namespace FinalProject
             postContainer.PerformLayout();
         }
 
-        public void newPosts_Load(object sender, EventArgs e)
+        public void TrendingPosts_Load(object sender, EventArgs e)
         {
             try
             {
@@ -147,25 +147,6 @@ namespace FinalProject
         {
             postContainer.Controls.Clear();
 
-            var posts = NewPostsFromServer();
-
-            var sortedPosts = posts
-                .OrderByDescending(p => DateTime.Parse(p["timestamp"]));
-
-            foreach (var post in sortedPosts)
-            {
-                Panel postCardClone = ClonePostCard();
-                postCardClone.Visible = true;
-                postCardClone.Tag = post["id"];
-
-                foreach (Control control in postCardClone.Controls)
-                {
-                    if (control.Name == "postTitle")
-                        control.Text = post["title"];
-                    else if (control.Name == "postConts")
-                        control.Text = post["content"];
-                    else if (control.Name == "postMeta")
-                        control.Text = $"Posted by {post["author"]} • {DateTime.Parse(post["timestamp"]):g}";
             // No debug label needed
 
             try
@@ -208,9 +189,16 @@ namespace FinalProject
                     return;
                 }
 
+                // Sort posts by comment count (most comments first)
                 var sortedPosts = posts
                     .Cast<XmlNode>()
-                    .OrderByDescending(p => DateTime.Parse(p["timestamp"].InnerText));
+                    .Select(post => new
+                    {
+                        Node = post,
+                        CommentCount = post.SelectNodes("comments/comment")?.Count ?? 0
+                    })
+                    .OrderByDescending(p => p.CommentCount)
+                    .Select(p => p.Node);
 
                 foreach (XmlNode post in sortedPosts)
                 {
@@ -221,6 +209,9 @@ namespace FinalProject
                         string content = post["content"]?.InnerText ?? "No Content";
                         string author = post["author"]?.InnerText ?? "Unknown";
                         string timestamp = post["timestamp"]?.InnerText ?? DateTime.Now.ToString();
+
+                        // Get comment count
+                        int commentCount = post.SelectNodes("comments/comment")?.Count ?? 0;
 
                         // Get or create post ID
                         string postId;
@@ -241,39 +232,47 @@ namespace FinalProject
                         }
 
                         // Add debug information
-                        Console.WriteLine($"Creating post card for: {title} (ID: {postId})");
+                        Console.WriteLine($"Creating trending post card for: {title} (ID: {postId}, Comments: {commentCount})");
 
                         // Create a new post card from scratch
-                        Panel postCard = CreatePostCard(title, content, author, timestamp, postId);
+                        Panel postCard = CreatePostCard(title, content, author, timestamp, postId, commentCount);
 
                         // Add the post card to the container
                         postContainer.Controls.Add(postCard);
 
                         // Add debug information
-                        Console.WriteLine($"Added post card to container: {title}");
+                        Console.WriteLine($"Added trending post card to container: {title}");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error creating post card: {ex.Message}");
-                        MessageBox.Show($"Error creating post card: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Console.WriteLine($"Error creating trending post card: {ex.Message}");
+                        MessageBox.Show($"Error creating trending post card: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-
-                postContainer.Controls.Add(postCardClone);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading posts: {ex.Message}");
             }
         }
 
 
-        private Panel CreatePostCard(string title, string content, string author, string timestamp, string postId)
+        private Panel CreatePostCard(string title, string content, string author, string timestamp, string postId, int commentCount)
         {
             // Calculate a width that's appropriate for the container
             int cardWidth = Math.Max(800, postContainer.Width - 50);
 
-            // Create the panel
+            // Create the panel with a background color based on comment count
+            Color panelColor = Color.White;
+            if (commentCount > 5)
+                panelColor = Color.FromArgb(255, 250, 250, 250); // Slightly different for very popular posts
+            else if (commentCount > 2)
+                panelColor = Color.FromArgb(255, 252, 252, 252); // Slightly different for popular posts
+
             Panel panel = new Panel
             {
                 Size = new Size(cardWidth, 150),
-                BackColor = Color.White,
+                BackColor = panelColor,
                 BorderStyle = BorderStyle.FixedSingle,
                 Margin = new Padding(5, 10, 5, 10),
                 Cursor = Cursors.Hand,
@@ -322,10 +321,10 @@ namespace FinalProject
                 Visible = true
             };
 
-            // Create the meta label
+            // Create the meta label with comment count
             Label metaLabel = new Label
             {
-                Text = $"Posted by {author} • {DateTime.Parse(timestamp):g}",
+                Text = $"Posted by {author} • {DateTime.Parse(timestamp):g} • {commentCount} {(commentCount == 1 ? "comment" : "comments")}",
                 Font = new Font("Segoe UI", 8, FontStyle.Regular),
                 Location = new Point(15, 110),
                 Size = new Size(cardWidth - 40, 20),
@@ -337,29 +336,60 @@ namespace FinalProject
                 Visible = true
             };
 
+            // Create a comment count badge
+            Label commentBadge = new Label
+            {
+                Text = commentCount.ToString(),
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Location = new Point(cardWidth - 50, 15),
+                Size = new Size(30, 30),
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = commentCount > 5 ? Color.FromArgb(23, 24, 29) :
+                           commentCount > 2 ? Color.FromArgb(32, 33, 36) :
+                           Color.FromArgb(50, 50, 55),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Visible = true
+            };
+
+            // Make the badge circular
+            commentBadge.Paint += (sender, e) => {
+                System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+                path.AddEllipse(0, 0, commentBadge.Width, commentBadge.Height);
+                commentBadge.Region = new Region(path);
+            };
+
             // Add the labels to the panel
             panel.Controls.Add(titleLabel);
             panel.Controls.Add(contentLabel);
             panel.Controls.Add(metaLabel);
+            panel.Controls.Add(commentBadge);
 
             // Add click event to the panel
             panel.Click += PostCard_Click;
 
+            // Store the original color for hover effects
+            Color originalColor = panel.BackColor;
+            Color hoverColor = Color.FromArgb(
+                Math.Min(255, originalColor.R + 10),
+                Math.Min(255, originalColor.G + 10),
+                Math.Min(255, originalColor.B + 10));
+
             // Add hover effects
             panel.MouseEnter += (sender, e) => {
-                panel.BackColor = Color.FromArgb(248, 249, 250);
+                panel.BackColor = hoverColor;
             };
 
             panel.MouseLeave += (sender, e) => {
-                panel.BackColor = Color.White;
+                panel.BackColor = originalColor;
             };
 
             // Add click event to all controls inside the panel
             foreach (Control ctrl in panel.Controls)
             {
                 ctrl.Click += (sender, e) => PostCard_Click(panel, e);
-                ctrl.MouseEnter += (sender, e) => panel.BackColor = Color.FromArgb(248, 249, 250);
-                ctrl.MouseLeave += (sender, e) => panel.BackColor = Color.White;
+                ctrl.MouseEnter += (sender, e) => panel.BackColor = hoverColor;
+                ctrl.MouseLeave += (sender, e) => panel.BackColor = originalColor;
             }
 
             return panel;
@@ -376,50 +406,6 @@ namespace FinalProject
                 Form1 mainForm = (Form1)this.FindForm();
                 mainForm.LoadPostDetail(postId);
             }
-        }
-
-        private List<Dictionary<string, string>> NewPostsFromServer()
-        {
-            List<Dictionary<string, string>> posts = new();
-
-            try
-            {
-                TcpClient client = new TcpClient(IPAddress, 8888);
-                using NetworkStream stream = client.GetStream();
-                using StreamWriter writer = new StreamWriter(stream) { AutoFlush = true };
-                using StreamReader reader = new StreamReader(stream);
-
-                var request = new { action = "getPosts" };
-                string jsonRequest = JsonSerializer.Serialize(request);
-                writer.WriteLine(jsonRequest);
-
-                string jsonResponse = reader.ReadLine();
-                var doc = JsonDocument.Parse(jsonResponse);
-                var root = doc.RootElement;
-
-                if (root.GetProperty("status").GetString() == "success")
-                {
-                    foreach (var post in root.GetProperty("posts").EnumerateArray())
-                    {
-                        posts.Add(new Dictionary<string, string>
-                {
-                    { "id", post.GetProperty("id").GetString() },
-                    { "title", post.GetProperty("title").GetString() },
-                    { "content", post.GetProperty("content").GetString() },
-                    { "author", post.GetProperty("author").GetString() },
-                    { "timestamp", post.GetProperty("timestamp").GetString() }
-                });
-                    }
-                }
-
-                client.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to fetch posts: {ex.Message}");
-            }
-
-            return posts;
         }
     }
 }
