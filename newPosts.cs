@@ -1,28 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
-using System.IO;
 using System.Net.Sockets;
 using System.Text.Json;
+using System.IO;
 
 namespace FinalProject
 {
     public partial class newPosts : UserControl
     {
-        string IPAddress = "127.0.0.1";
+        private readonly string IPAddress = "127.0.0.1";
+        private XmlDocument? doc;
+        private readonly string path = @"C:\Users\Zygos\Documents\ISCS\FinalProject\ForumServer\bin\Debug\net9.0\XMLFiles\data.xml";
 
         public newPosts()
         {
             InitializeComponent();
             LoadPosts();
-            this.Resize += NewPosts_Resize;
+            Resize += NewPosts_Resize;
 
             // Make sure the template post card is not visible
             postCard.Visible = false;
@@ -31,12 +29,12 @@ namespace FinalProject
             SetupPostCardTemplate();
 
             // Load posts after initialization
-            this.Load += (s, e) => {
+            Load += (s, e) => {
                 LoadPosts();
             };
 
             // Also load posts immediately
-            newPosts_Load(this, EventArgs.Empty);
+            NewPosts_Load(this, EventArgs.Empty);
         }
 
         private void SetupPostCardTemplate()
@@ -67,7 +65,7 @@ namespace FinalProject
             }
         }
 
-        private void NewPosts_Resize(object sender, EventArgs e)
+        private void NewPosts_Resize(object? sender, EventArgs e)
         {
             // Update post card widths when the control is resized
             foreach (Control control in postContainer.Controls)
@@ -116,13 +114,12 @@ namespace FinalProject
             postContainer.PerformLayout();
         }
 
-        public void newPosts_Load(object sender, EventArgs e)
+        public void NewPosts_Load(object? sender, EventArgs e)
         {
             try
             {
                 doc = new XmlDocument();
                 doc.Load(path);
-                root = doc.DocumentElement;
 
                 // Ensure the post container is visible and properly sized
                 postContainer.Visible = true;
@@ -147,55 +144,59 @@ namespace FinalProject
         {
             postContainer.Controls.Clear();
 
+            // Try to load posts from server first
             var posts = NewPostsFromServer();
 
-            var sortedPosts = posts
-                .OrderByDescending(p => DateTime.Parse(p["timestamp"]));
-
-            foreach (var post in sortedPosts)
+            if (posts.Count > 0)
             {
-                Panel postCardClone = ClonePostCard();
-                postCardClone.Visible = true;
-                postCardClone.Tag = post["id"];
+                // Sort posts by timestamp (most recent first)
+                var sortedPosts = posts
+                    .OrderByDescending(p => DateTime.Parse(p["timestamp"]));
 
-                foreach (Control control in postCardClone.Controls)
+                // Create post cards for each post
+                foreach (var post in sortedPosts)
                 {
-                    if (control.Name == "postTitle")
-                        control.Text = post["title"];
-                    else if (control.Name == "postConts")
-                        control.Text = post["content"];
-                    else if (control.Name == "postMeta")
-                        control.Text = $"Posted by {post["author"]} • {DateTime.Parse(post["timestamp"]):g}";
-            // No debug label needed
-
-            try
-            {
-                XmlDocument doc = new XmlDocument();
-                doc.Load(path);
-                // Make sure we're using the correct XPath query
-                XmlNodeList posts = doc.SelectNodes("/data/posts/post");
-
-                // If no posts found, try a different XPath query
-                if (posts == null || posts.Count == 0)
-                {
-                    posts = doc.SelectNodes("//post");
-                }
-
-                // No debug label needed
-
-                // Add more debug information
-                Console.WriteLine($"Found {posts?.Count ?? 0} posts in XML file.");
-                if (posts != null)
-                {
-                    foreach (XmlNode post in posts)
+                    try
                     {
-                        Console.WriteLine($"Post: {post["title"]?.InnerText ?? "No title"}");
+                        // Create a new post card
+                        Panel postCard = CreatePostCard(
+                            post["title"],
+                            post["content"],
+                            post["author"],
+                            post["timestamp"],
+                            post["id"]
+                        );
+
+                        // Add the post card to the container
+                        postContainer.Controls.Add(postCard);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error creating post card: {ex.Message}");
                     }
                 }
+                return;
+            }
 
-                if (posts == null || posts.Count == 0)
+            // Fallback to XML if server posts failed or returned empty
+            try
+            {
+                XmlDocument xmlDoc = new();
+                xmlDoc.Load(path);
+
+                // Make sure we're using the correct XPath query
+                XmlNodeList? xmlPosts = xmlDoc.SelectNodes("/data/posts/post");
+
+                // If no posts found, try a different XPath query
+                if (xmlPosts == null || xmlPosts.Count == 0)
                 {
-                    Label noPostsLabel = new Label
+                    xmlPosts = xmlDoc.SelectNodes("//post");
+                }
+
+                // If still no posts, show a message
+                if (xmlPosts == null || xmlPosts.Count == 0)
+                {
+                    Label noPostsLabel = new()
                     {
                         Text = "No posts found. Create a new post to get started!",
                         AutoSize = true,
@@ -208,49 +209,45 @@ namespace FinalProject
                     return;
                 }
 
-                var sortedPosts = posts
+                // Sort posts by timestamp
+                var sortedXmlPosts = xmlPosts
                     .Cast<XmlNode>()
-                    .OrderByDescending(p => DateTime.Parse(p["timestamp"].InnerText));
+                    .OrderByDescending(p => DateTime.Parse(p["timestamp"]?.InnerText ?? DateTime.Now.ToString()));
 
-                foreach (XmlNode post in sortedPosts)
+                // Create post cards for each post
+                foreach (XmlNode xmlPost in sortedXmlPosts)
                 {
                     try
                     {
                         // Extract post data
-                        string title = post["title"]?.InnerText ?? "No Title";
-                        string content = post["content"]?.InnerText ?? "No Content";
-                        string author = post["author"]?.InnerText ?? "Unknown";
-                        string timestamp = post["timestamp"]?.InnerText ?? DateTime.Now.ToString();
+                        string title = xmlPost["title"]?.InnerText ?? "No Title";
+                        string content = xmlPost["content"]?.InnerText ?? "No Content";
+                        string author = xmlPost["author"]?.InnerText ?? "Unknown";
+                        string timestamp = xmlPost["timestamp"]?.InnerText ?? DateTime.Now.ToString();
 
                         // Get or create post ID
                         string postId;
-                        XmlAttribute idAttr = post.Attributes["id"];
+                        XmlAttribute? idAttr = xmlPost.Attributes?["id"];
 
                         if (idAttr == null)
                         {
                             // Create a new ID for this post
                             postId = Guid.NewGuid().ToString();
-                            XmlAttribute newIdAttr = doc.CreateAttribute("id");
+                            XmlAttribute newIdAttr = xmlDoc.CreateAttribute("id");
                             newIdAttr.Value = postId;
-                            post.Attributes.Append(newIdAttr);
-                            doc.Save(path);
+                            xmlPost.Attributes?.Append(newIdAttr);
+                            xmlDoc.Save(path);
                         }
                         else
                         {
                             postId = idAttr.Value;
                         }
 
-                        // Add debug information
-                        Console.WriteLine($"Creating post card for: {title} (ID: {postId})");
-
-                        // Create a new post card from scratch
+                        // Create a new post card
                         Panel postCard = CreatePostCard(title, content, author, timestamp, postId);
 
                         // Add the post card to the container
                         postContainer.Controls.Add(postCard);
-
-                        // Add debug information
-                        Console.WriteLine($"Added post card to container: {title}");
                     }
                     catch (Exception ex)
                     {
@@ -258,10 +255,14 @@ namespace FinalProject
                         MessageBox.Show($"Error creating post card: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-
-                postContainer.Controls.Add(postCardClone);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading posts: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+
 
 
         private Panel CreatePostCard(string title, string content, string author, string timestamp, string postId)
@@ -270,7 +271,7 @@ namespace FinalProject
             int cardWidth = Math.Max(800, postContainer.Width - 50);
 
             // Create the panel
-            Panel panel = new Panel
+            Panel panel = new()
             {
                 Size = new Size(cardWidth, 150),
                 BackColor = Color.White,
@@ -289,7 +290,7 @@ namespace FinalProject
             };
 
             // Create the title label
-            Label titleLabel = new Label
+            Label titleLabel = new()
             {
                 Text = title,
                 Font = new Font("Segoe UI", 14, FontStyle.Bold),
@@ -306,10 +307,10 @@ namespace FinalProject
             string displayContent = content;
             if (content.Length > 200)
             {
-                displayContent = content.Substring(0, 197) + "...";
+                displayContent = string.Concat(content.AsSpan(0, 197), "...");
             }
 
-            Label contentLabel = new Label
+            Label contentLabel = new()
             {
                 Text = displayContent,
                 Font = new Font("Segoe UI", 9, FontStyle.Regular),
@@ -323,7 +324,7 @@ namespace FinalProject
             };
 
             // Create the meta label
-            Label metaLabel = new Label
+            Label metaLabel = new()
             {
                 Text = $"Posted by {author} • {DateTime.Parse(timestamp):g}",
                 Font = new Font("Segoe UI", 8, FontStyle.Regular),
@@ -365,50 +366,53 @@ namespace FinalProject
             return panel;
         }
 
-        private void PostCard_Click(object sender, EventArgs e)
+        private void PostCard_Click(object? sender, EventArgs e)
         {
             if (sender is Panel panel)
             {
                 // Get the post ID from the panel's Tag property
-                string postId = panel.Tag.ToString();
+                string postId = panel.Tag?.ToString() ?? string.Empty;
 
                 // Navigate to post detail view
-                Form1 mainForm = (Form1)this.FindForm();
-                mainForm.LoadPostDetail(postId);
+                if (FindForm() is Form1 mainForm)
+                    mainForm.LoadPostDetail(postId);
             }
         }
 
         private List<Dictionary<string, string>> NewPostsFromServer()
         {
-            List<Dictionary<string, string>> posts = new();
+            List<Dictionary<string, string>> posts = [];
 
             try
             {
-                TcpClient client = new TcpClient(IPAddress, 8888);
+                TcpClient client = new(IPAddress, 8888);
                 using NetworkStream stream = client.GetStream();
-                using StreamWriter writer = new StreamWriter(stream) { AutoFlush = true };
-                using StreamReader reader = new StreamReader(stream);
+                using StreamWriter writer = new(stream) { AutoFlush = true };
+                using StreamReader reader = new(stream);
 
                 var request = new { action = "getPosts" };
                 string jsonRequest = JsonSerializer.Serialize(request);
                 writer.WriteLine(jsonRequest);
 
-                string jsonResponse = reader.ReadLine();
-                var doc = JsonDocument.Parse(jsonResponse);
-                var root = doc.RootElement;
+                string? jsonResponse = reader.ReadLine();
+                if (jsonResponse != null)
+                {
+                    var doc = JsonDocument.Parse(jsonResponse);
+                    var root = doc.RootElement;
 
-                if (root.GetProperty("status").GetString() == "success")
-                {
-                    foreach (var post in root.GetProperty("posts").EnumerateArray())
+                    if (root.GetProperty("status").GetString() == "success")
                     {
-                        posts.Add(new Dictionary<string, string>
-                {
-                    { "id", post.GetProperty("id").GetString() },
-                    { "title", post.GetProperty("title").GetString() },
-                    { "content", post.GetProperty("content").GetString() },
-                    { "author", post.GetProperty("author").GetString() },
-                    { "timestamp", post.GetProperty("timestamp").GetString() }
-                });
+                        foreach (var post in root.GetProperty("posts").EnumerateArray())
+                        {
+                            posts.Add(new Dictionary<string, string>
+                            {
+                                { "id", post.GetProperty("id").GetString() ?? string.Empty },
+                                { "title", post.GetProperty("title").GetString() ?? string.Empty },
+                                { "content", post.GetProperty("content").GetString() ?? string.Empty },
+                                { "author", post.GetProperty("author").GetString() ?? string.Empty },
+                                { "timestamp", post.GetProperty("timestamp").GetString() ?? DateTime.Now.ToString() }
+                            });
+                        }
                     }
                 }
 

@@ -29,11 +29,11 @@ namespace FinalProject
             int nWidthEllipse, // width of ellipse
             int nHeightEllipse // height of ellipse
         );
-        private XmlDocument doc;
-        private XmlElement root;
-        private static string relativePath = @"XMLFiles\data.xml";
-        private string path = Path.Combine(Environment.CurrentDirectory, relativePath);
-        private string postId;
+        private XmlDocument? doc;
+        private XmlElement? root;
+        private static readonly string relativePath = @"XMLFiles\data.xml";
+        private readonly string path = @"C:\Users\Zygos\Documents\ISCS\FinalProject\ForumServer\bin\Debug\net9.0\XMLFiles\data.xml";
+        private readonly string postId;
 
         public PostDetail(string postId)
         {

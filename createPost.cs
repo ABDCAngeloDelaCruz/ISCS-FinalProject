@@ -15,7 +15,11 @@ namespace FinalProject
 {
     public partial class createPost : UserControl
     {
-        string IPAddress = "127.0.0.1";
+        private readonly string IPAddress = "127.0.0.1";
+        private static readonly string relativePath = @"XMLFiles\data.xml";
+        private readonly string path = @"C:\Users\Zygos\Documents\ISCS\FinalProject\ForumServer\bin\Debug\net9.0\XMLFiles\data.xml";
+        private XmlDocument? doc;
+        private XmlElement? root;
 
         public createPost()
         {
@@ -131,47 +135,7 @@ namespace FinalProject
                 MessageBox.Show($"Error: {ex.Message}");
             }
 
-            XmlElement postElement = doc.CreateElement("post");
 
-            // Add a unique ID attribute to the post
-            XmlAttribute idAttr = doc.CreateAttribute("id");
-            idAttr.Value = Guid.NewGuid().ToString();
-            postElement.Attributes.Append(idAttr);
-
-            XmlElement titleElement = doc.CreateElement("title");
-            titleElement.InnerText = title;
-            postElement.AppendChild(titleElement);
-
-            XmlElement contentElement = doc.CreateElement("content");
-            contentElement.InnerText = content;
-            postElement.AppendChild(contentElement);
-
-            XmlElement authorElement = doc.CreateElement("author");
-            authorElement.InnerText = author;
-            postElement.AppendChild(authorElement);
-
-            XmlElement timestampElement = doc.CreateElement("timestamp");
-            timestampElement.InnerText = timestamp;
-            postElement.AppendChild(timestampElement);
-
-            // Create an empty comments section
-            XmlElement commentsElement = doc.CreateElement("comments");
-            postElement.AppendChild(commentsElement);
-
-            postsNode.AppendChild(postElement);
-            doc.Save(path);
-
-            // Show success message
-            MessageBox.Show("Your post has been created successfully!", "Success",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-            // Reset form fields
-            titleBox.Text = "";
-            contentBox.Text = "Write your post content here...";
-            contentBox.ForeColor = Color.Gray;
-
-            // Set focus back to title for a new post
-            titleBox.Focus();
 
 
         }
